@@ -1,0 +1,18 @@
+{
+  "connections": {},
+  "skills": {
+    "reverse-engineer-anything": "resource:rea",
+    "blender-image-to-3d": "resource:blender",
+    "imagegen": "resource:imagegen",
+    "skill-catalog": "resource:catalog"
+  },
+  "plugins": {"meshy-openai-plugin": "resource:meshy"},
+  "labels": {
+    "zoo-cafe": {"title": "Правила проекта Зоо-Кафе", "description": "Разработка, проверка и выпуск игры Зоо-Кафе по её проектным правилам. Применяется только к этому проекту."},
+    "expo-prepare-materials": {"title": "Материалы для сайта выставок", "description": "Подготовка фотографий, каталога компании и заметок для сайта «Выставочные решения»."},
+    "power-bi": {"title": "Microsoft Power BI", "description": "Изучение отчётов, создание визуальных отчётов и публикация панелей Power BI через браузер."}
+  },
+  "bundle_labels": {
+    "google-drive": {"title": "Google Drive и документы", "description": "Работа с файлами Google Drive, документами, таблицами, презентациями и комментариями через подключённый аккаунт."}
+  }
+}
