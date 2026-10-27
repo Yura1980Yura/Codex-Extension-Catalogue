@@ -59,13 +59,13 @@ def migrate(directory):
             if card.get('state')!='present':continue
             name=card['name'].casefold();default=spec['skills'].get(name,{})
             overlay=updated.setdefault('skills',{}).setdefault(key,{})
-            if not directions['assignments'].get(key):
+            if not directions['assignments'].get(key) and key not in user.get('directions',{}).get('assignments',{}):
                 chosen=default.get('direction_ids') or transactions.initial_ids(card) or ['organization']
                 directions['assignments'][key]=[x for x in chosen if x in known];classified.append(key)
             if 'catalog_tags' not in overlay:overlay['catalog_tags']=default.get('tags',[])
             if 'resource_ids' not in overlay:overlay['resource_ids']=default.get('resource_ids',[])
             detected=overlay.get('origin') or card.get('origin','unknown')
-            if detected=='unknown' and name in spec['origins']:
+            if detected=='unknown' and 'origin' not in overlay and name in spec['origins']:
                 entry=spec['origins'][name]
                 overlay.update(origin=entry['origin'],origin_evidence=entry['evidence'])
                 if 'author_profile' not in overlay and entry.get('author'):

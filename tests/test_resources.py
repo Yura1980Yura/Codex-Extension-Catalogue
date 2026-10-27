@@ -69,6 +69,21 @@ class ResourceTests(unittest.TestCase):
         self.assertTrue(all(saved['directions']['assignments'].get(key) for key in self.inventory['skills']))
         self.assertTrue(o.migrate(self.data)['unchanged']);self.assertEqual(self.config.read_bytes(),self.before)
 
+    def test_migration_preserves_saved_empty_directions(self):
+        self.user['directions']={'schema':1,'items':[{'id':'documents','title':'Документы'}],'assignments':{'pdf':[]}}
+        atomic_json(self.data/'user.json',self.user)
+        o.migrate(self.data)
+        self.assertEqual(read_json(self.data/'user.json')['directions']['assignments']['pdf'],[])
+
+    def test_migration_preserves_explicit_unknown_origin(self):
+        self.inventory['skills']['pdf'].update(name='blender-image-to-3d',origin='unknown')
+        self.user['skills']['pdf'].update(origin='unknown',origin_evidence='Выбор пользователя')
+        atomic_json(self.data/'user.json',self.user);atomic_json(self.data/'inventory.json',self.inventory)
+        o.migrate(self.data)
+        saved=read_json(self.data/'user.json')['skills']['pdf']
+        self.assertEqual(saved['origin'],'unknown')
+        self.assertEqual(saved['origin_evidence'],'Выбор пользователя')
+
     def test_skill_resource_edit_preserves_notes_and_checks_revision(self):
         before=o.skill_metadata(self.inventory['skills']['pdf'],self.user)
         o.change_skill(self.data,{'skill_id':'pdf','revision':before['revision'],'tags':['Отчёт'],'resource_ids':['resource:pdf']})
