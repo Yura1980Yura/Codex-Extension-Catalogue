@@ -1,0 +1,13 @@
+{
+  "name": "Каталог Codex",
+  "version": "2.0.0",
+  "source_revision": "v2.0.0",
+  "distribution": "Windows personal catalogue",
+  "local_update": {
+    "date": "2026-10-27",
+    "feature": "resource-organization-v2",
+    "base_source_revision": "308d95b0f3738344bfdaaee12967a19aab7bf80f"
+  },
+  "source_repository": "https://github.com/Yura1980Yura/Skills-Catalogue",
+  "source_branch": "codex/catalog-v2"
+}

@@ -1,0 +1,285 @@
+{
+  "schema": 1,
+  "version": 2,
+  "directions": [
+    {
+      "id": "infrastructure",
+      "title": "Инфраструктура и публикация"
+    },
+    {
+      "id": "communication",
+      "title": "Коммуникации"
+    }
+  ],
+  "skills": {
+    "presentations": {
+      "direction_ids": [
+        "documents",
+        "design"
+      ],
+      "tags": [
+        "слайды",
+        "PowerPoint"
+      ],
+      "resource_ids": [
+        "resource:presentations"
+      ]
+    },
+    "spreadsheets": {
+      "direction_ids": [
+        "documents",
+        "research"
+      ],
+      "tags": [
+        "Excel",
+        "CSV",
+        "расчёты"
+      ],
+      "resource_ids": [
+        "resource:spreadsheets"
+      ]
+    },
+    "excel-live-control": {
+      "direction_ids": [
+        "documents",
+        "research"
+      ],
+      "tags": [
+        "Excel",
+        "открытые документы"
+      ],
+      "resource_ids": [
+        "resource:spreadsheets",
+        "resource:document-control"
+      ]
+    },
+    "documents": {
+      "direction_ids": [
+        "documents"
+      ],
+      "tags": [
+        "Word",
+        "DOCX"
+      ],
+      "resource_ids": [
+        "resource:documents"
+      ]
+    },
+    "pdf": {
+      "direction_ids": [
+        "documents"
+      ],
+      "tags": [
+        "PDF",
+        "извлечение текста"
+      ],
+      "resource_ids": [
+        "resource:pdf"
+      ]
+    },
+    "imagegen": {
+      "direction_ids": [
+        "design"
+      ],
+      "tags": [
+        "2D",
+        "изображения"
+      ],
+      "resource_ids": [
+        "resource:imagegen"
+      ]
+    },
+    "blender-image-to-3d": {
+      "direction_ids": [
+        "design",
+        "development"
+      ],
+      "tags": [
+        "3D",
+        "Blender",
+        "игровые ассеты"
+      ],
+      "resource_ids": [
+        "resource:blender",
+        "resource:meshy"
+      ]
+    },
+    "computer-use": {
+      "direction_ids": [
+        "organization",
+        "development"
+      ],
+      "tags": [
+        "Windows",
+        "автоматизация"
+      ],
+      "resource_ids": [
+        "resource:computer-use"
+      ]
+    },
+    "openai-docs": {
+      "direction_ids": [
+        "development",
+        "research"
+      ],
+      "tags": [
+        "документация",
+        "Codex"
+      ],
+      "resource_ids": [
+        "resource:search"
+      ]
+    },
+    "review-agent": {
+      "direction_ids": [
+        "development"
+      ],
+      "tags": [
+        "код-ревью",
+        "проверки"
+      ],
+      "resource_ids": [
+        "resource:github"
+      ]
+    },
+    "skill-creator": {
+      "direction_ids": [
+        "organization",
+        "development"
+      ],
+      "tags": [
+        "навыки",
+        "инструкции"
+      ],
+      "resource_ids": [
+        "resource:catalog"
+      ]
+    },
+    "skill-installer": {
+      "direction_ids": [
+        "organization"
+      ],
+      "tags": [
+        "навыки",
+        "установка"
+      ],
+      "resource_ids": [
+        "resource:catalog",
+        "resource:plugins"
+      ]
+    },
+    "template-creator": {
+      "direction_ids": [
+        "documents",
+        "organization"
+      ],
+      "tags": [
+        "шаблоны",
+        "оформление"
+      ],
+      "resource_ids": [
+        "resource:templates"
+      ]
+    },
+    "visualize": {
+      "direction_ids": [
+        "research",
+        "design"
+      ],
+      "tags": [
+        "визуализация",
+        "диаграммы"
+      ],
+      "resource_ids": [
+        "resource:visualize"
+      ]
+    },
+    "zoo-cafe": {
+      "direction_ids": [
+        "development",
+        "design"
+      ],
+      "tags": [
+        "игра",
+        "Zoo-Cafe"
+      ],
+      "resource_ids": [
+        "resource:github",
+        "resource:blender",
+        "resource:imagegen"
+      ]
+    },
+    "skill-catalog": {
+      "direction_ids": [
+        "organization",
+        "development"
+      ],
+      "tags": [
+        "каталог",
+        "навыки"
+      ],
+      "resource_ids": [
+        "resource:catalog"
+      ]
+    },
+    "expo-prepare-materials": {
+      "direction_ids": [
+        "design",
+        "organization"
+      ],
+      "tags": [
+        "выставки",
+        "материалы",
+        "каталог товаров"
+      ],
+      "resource_ids": [
+        "resource:sites"
+      ]
+    },
+    "reverse-engineer-anything": {
+      "direction_ids": [
+        "reverse",
+        "development"
+      ],
+      "tags": [
+        "REA",
+        "анализ программ"
+      ],
+      "resource_ids": [
+        "resource:rea"
+      ]
+    }
+  },
+  "origins": {
+    "blender-image-to-3d": {
+      "origin": "third_party",
+      "evidence": "Источник установки в журнале: majidmanzarpour/blender-game-skills@f0ef29385a03de139957e6f700b801cdc00b7e29, skills/blender-image-to-3d.",
+      "author": {
+        "name": "majidmanzarpour",
+        "links": [
+          {
+            "label": "Исходный репозиторий",
+            "url": "https://github.com/majidmanzarpour/blender-game-skills"
+          }
+        ]
+      }
+    },
+    "zoo-cafe": {
+      "origin": "personal",
+      "evidence": "Навык проекта владельца каталога: Yura1980Yura/Zoo-Cafe; источник установки указан в журнале операций.",
+      "author": {
+        "name": "Yura1980Yura",
+        "links": [
+          {
+            "label": "Проект Zoo-Cafe",
+            "url": "https://github.com/Yura1980Yura/Zoo-Cafe"
+          }
+        ]
+      }
+    },
+    "expo-prepare-materials": {
+      "origin": "third_party",
+      "evidence": "Получен из передаваемого комплекта Exhibition-Employee-Kit; источник зафиксирован в installation.json и журнале. Комплект не является поставкой OpenAI; конкретное авторство не установлено."
+    }
+  }
+}

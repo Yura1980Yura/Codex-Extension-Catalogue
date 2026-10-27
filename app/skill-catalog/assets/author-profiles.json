@@ -1,0 +1,415 @@
+{
+  "schema": 1,
+  "repositories": {
+    "Calliope-Editor/writing-skills": {
+      "profile": {
+        "name": "Rhymenoceros s. r. o. (Calliope)",
+        "links": [
+          {
+            "label": "Сайт Calliope",
+            "url": "https://writecalliope.ink/features/mcp/"
+          },
+          {
+            "label": "GitHub",
+            "url": "https://github.com/Calliope-Editor/writing-skills"
+          }
+        ]
+      },
+      "evidence": "Лицензия установленного комплекта writing-skills: Rhymenoceros s. r. o.; опубликованный сайт Calliope. Проверено 23.10.2026."
+    },
+    "wgwtest/novel-writing": {
+      "profile": {
+        "name": "wgwtest",
+        "links": [
+          {
+            "label": "GitHub",
+            "url": "https://github.com/wgwtest/novel-writing"
+          }
+        ]
+      },
+      "evidence": "Лицензия установленного novel-writing указывает wgwtest. Проверено 23.10.2026."
+    },
+    "morluto/rea": {
+      "profile": {
+        "name": "morluto",
+        "links": [
+          {
+            "label": "Сайт REA",
+            "url": "https://rea.tools/"
+          },
+          {
+            "label": "GitHub",
+            "url": "https://github.com/morluto/rea"
+          }
+        ]
+      },
+      "evidence": "Лицензия проекта REA указывает morluto; сайт проекта rea.tools. Проверено 23.10.2026."
+    },
+    "emilkowalski/skills": {
+      "profile": {
+        "name": "Emil Kowalski",
+        "links": [
+          {
+            "label": "Сайт автора",
+            "url": "https://emilkowal.ski/skill"
+          },
+          {
+            "label": "GitHub",
+            "url": "https://github.com/emilkowalski/skills"
+          }
+        ]
+      },
+      "evidence": "Лицензия установленного animate указывает Emil Kowalski; сайт автора. Проверено 23.10.2026."
+    },
+    "anthropics/skills": {
+      "profile": {
+        "name": "Anthropic",
+        "links": [
+          {
+            "label": "GitHub",
+            "url": "https://github.com/anthropics/skills"
+          }
+        ]
+      },
+      "evidence": "Официальный README репозитория anthropics/skills. Проверено 23.10.2026."
+    }
+  },
+  "skills": {
+    "system:imagegen": {
+      "profile": {
+        "name": "OpenAI",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор OpenAI явно указан в source.author системного навыка; официальный сайт OpenAI проверен 23.10.2026."
+    },
+    "system:openai-docs": {
+      "profile": {
+        "name": "OpenAI",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор OpenAI явно указан в source.author системного навыка; официальный сайт OpenAI проверен 23.10.2026."
+    },
+    "system:review-agent": {
+      "profile": {
+        "name": "OpenAI",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор OpenAI явно указан в source.author системного навыка; официальный сайт OpenAI проверен 23.10.2026."
+    },
+    "system:skill-creator": {
+      "profile": {
+        "name": "OpenAI",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор OpenAI явно указан в source.author системного навыка; официальный сайт OpenAI проверен 23.10.2026."
+    },
+    "system:skill-installer": {
+      "profile": {
+        "name": "OpenAI",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор OpenAI явно указан в source.author системного навыка; официальный сайт OpenAI проверен 23.10.2026."
+    },
+    "plugin:computer-use@openai-bundled:computer-use": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: computer-use@openai-bundled, версия 26.1016.51333; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:documents@openai-primary-runtime:documents": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: documents@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:google-drive@openai-curated-remote:google-docs": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: google-drive@openai-curated-remote, версия 0.1.22; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:google-drive@openai-curated-remote:google-drive": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: google-drive@openai-curated-remote, версия 0.1.22; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:google-drive@openai-curated-remote:google-drive-comments": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: google-drive@openai-curated-remote, версия 0.1.22; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:google-drive@openai-curated-remote:google-sheets": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: google-drive@openai-curated-remote, версия 0.1.22; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:google-drive@openai-curated-remote:google-slides": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: google-drive@openai-curated-remote, версия 0.1.22; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:pages@openai-curated-remote:maintain-space": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: pages@openai-curated-remote, версия 0.1.23; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:pages@openai-curated-remote:manage-schedules": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: pages@openai-curated-remote, версия 0.1.23; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:pages@openai-curated-remote:organize-space": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: pages@openai-curated-remote, версия 0.1.23; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:pages@openai-curated-remote:write-page": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: pages@openai-curated-remote, версия 0.1.23; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:pdf@openai-primary-runtime:pdf": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: pdf@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:plugin-management@openai-curated-remote:plugin-management": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: plugin-management@openai-curated-remote, версия 0.1.0; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:presentations@openai-primary-runtime:presentations": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: presentations@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:sites@openai-curated-remote:sites": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: sites@openai-curated-remote, версия 1.1.1; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:sites@openai-curated-remote:sites-remix": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: sites@openai-curated-remote, версия 1.1.1; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:spreadsheets@openai-primary-runtime:excel-live-control": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: spreadsheets@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:spreadsheets@openai-primary-runtime:spreadsheets": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: spreadsheets@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:template-creator@openai-primary-runtime:template-creator": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: template-creator@openai-primary-runtime, версия 26.1017.22136; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:visualize@openai-bundled:visualize": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: visualize@openai-bundled, версия 1.0.55; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:work-pets@openai-curated-remote:create-pet": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: work-pets@openai-curated-remote, версия 0.1.6; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:work-pets@openai-curated-remote:pets": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: work-pets@openai-curated-remote, версия 0.1.6; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    },
+    "plugin:work-pets@openai-curated-remote:update-pet": {
+      "profile": {
+        "name": "OpenAI (автор пакета)",
+        "links": [
+          {
+            "label": "Сайт OpenAI",
+            "url": "https://openai.com/"
+          }
+        ]
+      },
+      "evidence": "Автор пакета по .codex-plugin/plugin.json: work-pets@openai-curated-remote, версия 0.1.6; author.name=OpenAI, skills=./skills/. Отдельный автор навыка не указан. Проверено 23.10.2026."
+    }
+  }
+}

@@ -1,0 +1,722 @@
+{
+  "schema": 1,
+  "resources": [
+    {
+      "id": "resource:meshy",
+      "profile_id": "service:meshy",
+      "kind": "external",
+      "direction_ids": [
+        "design"
+      ],
+      "tags": [
+        "3D",
+        "текстуры",
+        "анимация"
+      ],
+      "skill_names": [
+        "blender-image-to-3d"
+      ],
+      "methods": [
+        "mcp",
+        "api"
+      ],
+      "billing": "paid",
+      "aliases": [
+        "service:meshy"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:cloudflare",
+      "profile_id": "service:cloudflare",
+      "kind": "external",
+      "direction_ids": [
+        "infrastructure",
+        "development"
+      ],
+      "tags": [
+        "DNS",
+        "хостинг",
+        "Workers"
+      ],
+      "skill_names": [],
+      "methods": [
+        "mcp",
+        "api"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "service:cloudflare"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:github",
+      "profile_id": "app:connector_76869538009648d5b282a4bb21c3d157",
+      "kind": "external",
+      "direction_ids": [
+        "development"
+      ],
+      "tags": [
+        "Git",
+        "репозитории"
+      ],
+      "skill_names": [
+        "review-agent",
+        "zoo-cafe"
+      ],
+      "methods": [
+        "app",
+        "api"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "app:connector_76869538009648d5b282a4bb21c3d157"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:gmail",
+      "profile_id": "app:connector_2128aebfecb84f64a069897515042a44",
+      "kind": "external",
+      "direction_ids": [
+        "communication"
+      ],
+      "tags": [
+        "почта"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app",
+        "api"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "app:connector_2128aebfecb84f64a069897515042a44"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:calendar",
+      "profile_id": "plugin:google-calendar@openai-curated",
+      "kind": "external",
+      "direction_ids": [
+        "communication",
+        "organization"
+      ],
+      "tags": [
+        "календарь",
+        "события"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "plugin:google-calendar@openai-curated"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:slack",
+      "profile_id": "plugin:slack@openai-curated",
+      "kind": "external",
+      "direction_ids": [
+        "communication"
+      ],
+      "tags": [
+        "сообщения"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "plugin:slack@openai-curated"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:rea",
+      "profile_id": "mcp:rea",
+      "kind": "local",
+      "direction_ids": [
+        "reverse",
+        "development"
+      ],
+      "tags": [
+        "анализ программ",
+        "REA"
+      ],
+      "skill_names": [
+        "reverse-engineer-anything"
+      ],
+      "methods": [
+        "mcp",
+        "cli"
+      ],
+      "billing": "free",
+      "aliases": [
+        "mcp:rea"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:javascript",
+      "profile_id": "mcp:node_repl",
+      "kind": "builtin",
+      "direction_ids": [
+        "development",
+        "research"
+      ],
+      "tags": [
+        "JavaScript",
+        "вычисления"
+      ],
+      "skill_names": [],
+      "methods": [
+        "mcp"
+      ],
+      "billing": "included",
+      "aliases": [
+        "mcp:node_repl"
+      ],
+      "technical": true,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:browser",
+      "profile_id": "plugin:browser@openai-bundled",
+      "kind": "builtin",
+      "direction_ids": [
+        "development",
+        "research"
+      ],
+      "tags": [
+        "браузер",
+        "проверка интерфейса"
+      ],
+      "skill_names": [],
+      "methods": [
+        "browser"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:browser@openai-bundled",
+        "plugin:unified-computer-use@openai-bundled"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:chrome",
+      "profile_id": "plugin:chrome@openai-bundled",
+      "kind": "builtin",
+      "direction_ids": [
+        "development",
+        "research"
+      ],
+      "tags": [
+        "Chrome",
+        "браузер"
+      ],
+      "skill_names": [],
+      "methods": [
+        "browser"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:chrome@openai-bundled"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:codex-app",
+      "profile_id": "plugin:codex-app-tools@openai-bundled",
+      "kind": "builtin",
+      "direction_ids": [
+        "organization"
+      ],
+      "tags": [
+        "чаты",
+        "проекты"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:codex-app-tools@openai-bundled"
+      ],
+      "technical": true,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:computer-use",
+      "profile_id": "plugin:computer-use@openai-bundled",
+      "kind": "builtin",
+      "direction_ids": [
+        "organization",
+        "development"
+      ],
+      "tags": [
+        "Windows",
+        "автоматизация"
+      ],
+      "skill_names": [
+        "computer-use"
+      ],
+      "methods": [
+        "browser"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:computer-use@openai-bundled"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:documents",
+      "profile_id": "plugin:documents@openai-primary-runtime",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents"
+      ],
+      "tags": [
+        "Word",
+        "DOCX"
+      ],
+      "skill_names": [
+        "documents"
+      ],
+      "methods": [
+        "local"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:documents@openai-primary-runtime"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:pdf",
+      "profile_id": "plugin:pdf@openai-primary-runtime",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents"
+      ],
+      "tags": [
+        "PDF"
+      ],
+      "skill_names": [
+        "pdf"
+      ],
+      "methods": [
+        "local"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:pdf@openai-primary-runtime"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:presentations",
+      "profile_id": "plugin:presentations@openai-primary-runtime",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents",
+        "design"
+      ],
+      "tags": [
+        "PowerPoint",
+        "слайды"
+      ],
+      "skill_names": [
+        "presentations"
+      ],
+      "methods": [
+        "local",
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:presentations@openai-primary-runtime"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:spreadsheets",
+      "profile_id": "plugin:spreadsheets@openai-primary-runtime",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents",
+        "research"
+      ],
+      "tags": [
+        "Excel",
+        "CSV"
+      ],
+      "skill_names": [
+        "spreadsheets",
+        "excel-live-control"
+      ],
+      "methods": [
+        "local",
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:spreadsheets@openai-primary-runtime"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:templates",
+      "profile_id": "plugin:template-creator@openai-primary-runtime",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents",
+        "organization"
+      ],
+      "tags": [
+        "шаблоны"
+      ],
+      "skill_names": [
+        "template-creator"
+      ],
+      "methods": [
+        "local"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:template-creator@openai-primary-runtime"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:visualize",
+      "profile_id": "plugin:visualize@openai-bundled",
+      "kind": "builtin",
+      "direction_ids": [
+        "research",
+        "design"
+      ],
+      "tags": [
+        "визуализация",
+        "диаграммы"
+      ],
+      "skill_names": [
+        "visualize"
+      ],
+      "methods": [
+        "local"
+      ],
+      "billing": "included",
+      "aliases": [
+        "plugin:visualize@openai-bundled"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:space",
+      "profile_id": "app:connector_openai_pages",
+      "kind": "builtin",
+      "direction_ids": [
+        "organization",
+        "documents"
+      ],
+      "tags": [
+        "страницы",
+        "знания"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_pages"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:document-control",
+      "profile_id": "app:connector_openai_codex_document_control",
+      "kind": "builtin",
+      "direction_ids": [
+        "documents"
+      ],
+      "tags": [
+        "открытые документы"
+      ],
+      "skill_names": [
+        "excel-live-control"
+      ],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_codex_document_control"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:security",
+      "profile_id": "app:connector_openai_defense_factory",
+      "kind": "builtin",
+      "direction_ids": [
+        "reverse",
+        "development"
+      ],
+      "tags": [
+        "безопасность"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "unknown",
+      "aliases": [
+        "app:connector_openai_defense_factory"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:hotline",
+      "profile_id": "app:connector_openai_hotline",
+      "kind": "builtin",
+      "direction_ids": [
+        "research"
+      ],
+      "tags": [
+        "справочник помощи"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_hotline"
+      ],
+      "technical": true,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:pets",
+      "profile_id": "app:connector_openai_chatgpt_pets",
+      "kind": "builtin",
+      "direction_ids": [
+        "design"
+      ],
+      "tags": [
+        "питомцы",
+        "анимация"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "unknown",
+      "aliases": [
+        "app:connector_openai_chatgpt_pets"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:plugins",
+      "profile_id": "app:connector_openai_plugin_management",
+      "kind": "builtin",
+      "direction_ids": [
+        "organization"
+      ],
+      "tags": [
+        "плагины",
+        "разрешения"
+      ],
+      "skill_names": [
+        "skill-installer"
+      ],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_plugin_management"
+      ],
+      "technical": true,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:safety",
+      "profile_id": "app:connector_openai_safety_settings",
+      "kind": "builtin",
+      "direction_ids": [
+        "organization"
+      ],
+      "tags": [
+        "настройки аккаунта"
+      ],
+      "skill_names": [],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_safety_settings"
+      ],
+      "technical": true,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:search",
+      "profile_id": "app:connector_openai_search_service",
+      "kind": "builtin",
+      "direction_ids": [
+        "research"
+      ],
+      "tags": [
+        "веб-поиск"
+      ],
+      "skill_names": [
+        "openai-docs"
+      ],
+      "methods": [
+        "app"
+      ],
+      "billing": "included",
+      "aliases": [
+        "app:connector_openai_search_service"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:sites",
+      "profile_id": "app:connector_20205bf7d4e99a89d7154bb849718324",
+      "kind": "builtin",
+      "direction_ids": [
+        "infrastructure",
+        "development",
+        "design"
+      ],
+      "tags": [
+        "сайты",
+        "публикация"
+      ],
+      "skill_names": [
+        "expo-prepare-materials"
+      ],
+      "methods": [
+        "app"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "app:connector_20205bf7d4e99a89d7154bb849718324"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:imagegen",
+      "profile_id": "resource:imagegen",
+      "kind": "builtin",
+      "direction_ids": [
+        "design"
+      ],
+      "tags": [
+        "2D",
+        "изображения"
+      ],
+      "skill_names": [
+        "imagegen"
+      ],
+      "methods": [
+        "app"
+      ],
+      "billing": "mixed",
+      "aliases": [
+        "resource:imagegen"
+      ],
+      "technical": false,
+      "requires_connection": false
+    },
+    {
+      "id": "resource:blender",
+      "profile_id": "resource:blender",
+      "kind": "local",
+      "direction_ids": [
+        "design",
+        "development"
+      ],
+      "tags": [
+        "3D",
+        "Blender"
+      ],
+      "skill_names": [
+        "blender-image-to-3d"
+      ],
+      "methods": [
+        "local",
+        "cli"
+      ],
+      "billing": "free",
+      "aliases": [
+        "resource:blender"
+      ],
+      "technical": false,
+      "requires_connection": true
+    },
+    {
+      "id": "resource:catalog",
+      "profile_id": "resource:catalog",
+      "kind": "local",
+      "direction_ids": [
+        "organization",
+        "development"
+      ],
+      "tags": [
+        "каталог",
+        "навыки"
+      ],
+      "skill_names": [
+        "skill-catalog",
+        "skill-creator",
+        "skill-installer"
+      ],
+      "methods": [
+        "local"
+      ],
+      "billing": "free",
+      "aliases": [
+        "resource:catalog"
+      ],
+      "technical": false,
+      "requires_connection": false
+    }
+  ]
+}

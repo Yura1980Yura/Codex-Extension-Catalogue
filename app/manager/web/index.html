@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="catalog-token" content="__CATALOG_TOKEN__">
+  <meta name="theme-color" content="#182e2c">
+  <title>Каталог Codex — личная мастерская</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+  <link rel="stylesheet" href="/projects.css"><script src="/projects.js" defer></script>
+  <link rel="stylesheet" href="/connections.css"><script src="/connections.js" defer></script>
+  <link rel="stylesheet" href="/resources.css"><script src="/resources.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Главное меню">
+      <a class="brand" href="#skills"><span class="brand-mark" aria-hidden="true">н<span>✳</span></span><span>Каталог Codex<small>Личная мастерская</small></span></a>
+      <div class="workspace-label">Ваше пространство</div>
+      <nav id="navigation"></nav>
+      <div class="sidebar-bottom"><div class="local-state"><span class="live-dot"></span>На вашем компьютере</div><p>Один каталог.<br>Заметки всегда рядом.</p><button class="sidebar-help" id="help-button">Как пользоваться <span>↗</span></button></div>
+    </aside>
+    <div class="sidebar-shade" id="sidebar-shade"></div>
+    <main>
+      <header class="topbar"><button id="menu-button" class="icon-button mobile-menu" aria-label="Открыть меню" aria-controls="sidebar" aria-expanded="false"></button><div class="breadcrumb">Личный каталог <span>/</span> <strong id="breadcrumb">Мои навыки</strong></div><button id="refresh-button" class="quiet-button"></button></header>
+      <div id="content" class="content"><div class="loading"><span class="spinner"></span>Открываем вашу мастерскую…</div></div>
+      <footer class="page-footer"><span id="last-updated"></span><span>Codex Skill Catalog <span class="footer-dot">·</span> ваши данные</span></footer>
+    </main>
+  </div>
+  <dialog id="detail-dialog" class="detail-dialog"><div id="detail-content"></div></dialog>
+  <dialog aria-label="Действие с каталогом" id="form-dialog" class="form-dialog"><div id="form-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

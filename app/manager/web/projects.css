@@ -1,0 +1,40 @@
+.projects-workspace{display:grid;gap:22px;min-width:0;}
+.projects-selection{padding:20px 24px;background:var(--surface);border:1px solid var(--line);border-radius:12px;}
+.projects-selection label{display:grid;gap:8px;font-size:13px;font-weight:600;max-width:650px;}
+.projects-selection select{width:100%;min-height:48px;}
+.project-path{display:grid;gap:6px;font-size:12px;color:var(--muted);margin:15px 0 0;}
+.project-path code,.project-form-context code{font-family:Consolas,monospace;overflow-wrap:anywhere;white-space:normal;}
+.project-section{padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0;}
+.project-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;}
+.project-section h2{font-size:20px;line-height:1.35;margin:0 0 7px;}
+.project-section h2 span{font-size:13px;font-weight:500;color:var(--muted);margin-left:6px;}
+.project-section p{font-size:14px;line-height:1.7;color:var(--muted);margin:8px 0;overflow-wrap:anywhere;}
+.project-section-heading p{margin:0;}
+.project-section-heading>.secondary-button{flex-shrink:0;min-height:44px;}
+.project-records{display:grid;gap:12px;}
+.project-record{padding:18px;border:1px solid var(--line);border-radius:9px;background:var(--paper);min-width:0;}
+.project-record-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.project-record h3{font-size:16px;line-height:1.45;margin:0;min-width:0;}
+.project-record h4{font-size:13px;line-height:1.5;margin:16px 0 3px;}
+.project-record-actions{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;}
+.project-record-actions .quiet-button{min-height:44px;}
+.project-skill-link{border:0;padding:7px 0;background:transparent;text-align:left;color:var(--ink);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px;min-height:44px;overflow-wrap:anywhere;}
+.project-skill-link:hover{text-decoration-color:currentColor;}
+.project-missing-skill{overflow-wrap:anywhere;}
+.project-missing-skill code{display:block;font-size:11px;font-weight:400;}
+.project-record time{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:8px;}
+.project-preserve-lines{white-space:pre-wrap;}
+.project-evidence-link{display:inline-flex;align-items:center;gap:7px;min-height:44px;margin-top:5px;color:var(--accent);overflow-wrap:anywhere;}
+.project-evidence-link svg{width:16px;height:16px;flex-shrink:0;}
+.project-section .small-note{font-size:12px;}
+.project-empty{padding:8px 0;max-width:75ch;}
+.project-installed summary{font-weight:600;font-size:16px;cursor:pointer;min-height:32px;}
+.project-installed ul{margin:12px 0 0;padding-left:20px;}
+.project-form .text-input{min-height:44px;margin-top:8px;}
+.project-form .filter-select{display:block;width:100%;margin-top:8px;min-height:44px;}
+.project-form .note-input{margin-top:8px;}
+.project-form .project-form-context{padding:12px;background:var(--soft);border-radius:7px;overflow-wrap:anywhere;}
+.project-form .project-confirm{display:flex;gap:10px;align-items:flex-start;line-height:1.65;font-size:14px;color:var(--ink);padding:12px;border:1px solid var(--line);border-radius:8px;}
+.project-confirm input{width:20px;height:20px;flex-shrink:0;margin-top:2px;}
+#project-form-status{line-height:1.65;overflow-wrap:anywhere;}
+@media(max-width:760px){.project-section,.projects-selection{padding:18px;}.project-section-heading,.project-record-heading{flex-direction:column;}.project-section-heading>.secondary-button{max-width:100%;}.project-record-actions{width:100%;}.project-record{padding:14px;}.project-record time{padding-top:0;}.project-section h2{font-size:19px;}}
