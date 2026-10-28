@@ -61,12 +61,17 @@ h3{font-size:16px;font-weight:650}
 .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px}
 .status-dot.amber{background:#a17129}
 .filters{background:white;border:1px solid var(--line);border-radius:var(--radius);padding:17px 20px;margin-bottom:20px}
+.type-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px}
 .type-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .type-chip{display:flex;align-items:center;gap:6px;min-height:42px;border:1px solid transparent;border-radius:7px;background:transparent;padding:7px 12px;color:var(--muted)}
 .type-chip svg{width:17px;height:17px}
 .type-chip span{font-size:12px;padding:0 4px;color:inherit;opacity:.85}
 .type-chip[aria-pressed=true]{background:var(--accent-soft);border-color:#b7cfc3;color:var(--accent);font-weight:600}
 .type-chip:hover{background:#f2f5f3}
+.favorite-filter{margin-left:auto;min-height:44px;white-space:nowrap;border-color:var(--line)}
+.favorite-filter svg{color:var(--amber)}
+.favorite-filter[aria-pressed=true]{background:var(--amber-soft);border-color:#d8bd85;color:var(--amber)}
+.favorite-filter[aria-pressed=true] svg{fill:#f5dca1}
 .filter-row{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-top:17px;border-top:1px solid #edf0ee;padding-top:16px}
 .filter-row label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px;flex:1;min-width:136px}
 .filter-row select,.filter-row input{width:100%;background:#fff;border:1px solid #cbd7cf;border-radius:7px;color:var(--ink);padding:8px 10px;min-height:42px}
