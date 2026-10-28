@@ -26,7 +26,11 @@ class Current(unittest.TestCase):
     def test_open_folder_uses_only_known_project_id(self):
         with patch('os.startfile',create=True) as start:
             self.service.open_project({'id':'game','path':'C:/unrelated'})
-            start.assert_called_once_with(str(self.folder.resolve()))
+            args,kwargs=start.call_args
+            self.assertEqual(Path(args[0]).name.lower(),'explorer.exe')
+            from subprocess import list2cmdline
+            self.assertEqual(kwargs,{'arguments':list2cmdline([str(self.folder.resolve())]),'show_cmd':1})
+            self.assertEqual(start.call_count,1)
             with self.assertRaises(ValueError):self.service.open_project({'id':'C:/unrelated'})
     def test_names_follow_codex_without_merging_distinct_folders(self):
         write(self.home/'.codex/.codex-global-state.json',{'local-projects':{'x':{'name':'Game','rootPaths':[str(self.folder),'C:/other-access']}}})

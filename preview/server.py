@@ -72,7 +72,10 @@ class Preview:
         project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)
         if not project or not Path(project['path']).is_dir():
             raise ValueError('Папка проекта не найдена.')
-        os.startfile(str(Path(project['path']).resolve()))
+        # Open Explorer explicitly: the folder association can acknowledge the
+        # request without displaying a window when launched by a hidden server.
+        explorer = str(Path(os.environ.get('WINDIR', r'C:\Windows'))/'explorer.exe')
+        os.startfile(explorer, arguments=subprocess.list2cmdline([str(Path(project['path']).resolve())]), show_cmd=1)
         return {'opened': True}
 
     def open_legacy(self):

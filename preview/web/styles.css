@@ -197,9 +197,10 @@ code,.path{font-family:inherit;font-size:12px;color:#587062;overflow-wrap:anywhe
 .crumb strong{color:var(--ink);font-size:13px}
 #refresh{font-size:12px;padding:6px}
 #main{padding:25px 17px}
-.page-heading{gap:10px}
+.page-heading{gap:10px;flex-direction:column}
 h1{font-size:29px}
 .page-heading .scope-label{display:none}
+.page-heading button.scope-label{display:inline-flex;margin:0 0 14px;min-height:44px}
 .page-heading p{font-size:14px}
 .overview-line{gap:9px 16px;font-size:12px}
 .filters{padding:13px}
@@ -342,16 +343,7 @@ footer{padding:10px 17px 24px;flex-direction:column;gap:4px}
 .markdown tr:last-child td{border-bottom:0}
 .markdown tr:nth-child(even) td{background:#f8faf8}
 
-.folder-link{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:#f5f8f6;padding:12px 14px;border-radius:8px;width:100%;font-size:13px;color:var(--accent);margin-bottom:18px;overflow-wrap:anywhere}
-.folder-link span{flex:1;min-width:0}
-.folder-link svg{width:19px;height:19px;flex:none}
 
-.project-columns{display:grid;grid-template-columns:1fr 1fr;gap:25px}
-.project-columns>section{min-width:0}
-.project-addon{padding:13px 0;border-top:1px solid var(--line)}
-.project-addon .quiet{padding:0;min-height:30px;font-weight:600;color:var(--accent);text-align:left;justify-content:flex-start}
-.project-addon p{font-size:12px;color:var(--muted);margin:5px 0 9px}
-.project-extra{padding-top:18px;border-top:1px solid var(--line);font-size:13px}
 
 .order-controls{display:flex;align-items:center;gap:2px;margin:12px -7px -5px;border-top:1px solid #edf1ee;padding-top:6px}
 .order-controls .quiet{font-size:13px;min-height:32px;padding:4px 7px}
@@ -384,7 +376,6 @@ dialog.no-motion{animation:none!important;transition:none!important}
 .multi-field{min-width:125px}
 .multi summary>span:first-child{max-width:150px}
 .filter-row .multi-options label{min-height:44px}
-.project-columns{grid-template-columns:1fr}
 .order-controls .quiet{min-height:38px}
 .multi summary{min-height:44px}
 #reader header{padding:12px 16px}
