@@ -16,6 +16,8 @@ class ProjectFolderTests(unittest.TestCase):
         self.snapshot={'projects':self.projects,'addons':[]}
         write(self.work/'snapshot.json',self.snapshot)
         self.service=Preview(self.settings,self.work)
+        refreshing=patch.object(self.service,'refresh',return_value={'state':'running'})
+        self.refreshing=refreshing.start();self.addCleanup(refreshing.stop)
     def tearDown(self):self.tmp.cleanup()
     def save(self,path,revision=0):
         return self.service.set_project_folder({'id':'game','path':path,'revision':revision})
@@ -24,6 +26,8 @@ class ProjectFolderTests(unittest.TestCase):
         state=self.save(str(self.actual))
         self.assertEqual(state['projects'][0]['file_path'],str(self.actual.resolve()))
         self.assertEqual(state['projects'][0]['path'],str(self.codex))
+        self.assertEqual(state['projects'][0]['skill_path'],str(self.actual.resolve()))
+        self.refreshing.assert_called_once()
         self.assertEqual(state['projects'][0]['file_path_source'],'user')
         self.assertEqual(state['projects'][1]['file_path'],str(self.codex))
         self.assertEqual(read(self.work/'snapshot.json'),self.snapshot)

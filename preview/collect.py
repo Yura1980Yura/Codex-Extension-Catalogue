@@ -10,6 +10,8 @@ import tempfile
 
 from model import build, norm
 from project_registry import registered_projects, merge_projects
+from project_folders import file_folder
+from skill_sources import definitions, scan, integrate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -72,13 +74,17 @@ def collect(settings, work):
                 by_path[norm(path)] = {'id': connections.project_id(str(path)), 'name': raw.get('name') or path.name, 'path': str(path)}
         registry, registry_warning = registered_projects(home, connections.project_id)
         projects = merge_projects(list(by_path.values()), registry)
+        overlay = read(work/'annotations.json', {})
+        for project in projects:
+            project['skill_path'] = file_folder(project, overlay)
         by_path = {norm(p['path']): p for p in projects}
         session_path = settings.get('session')
         session = read(session_path, {}) if session_path else {}
-        inventory = catalog.refresh(snapshot, home, str(home), [p['path'] for p in projects], Path(session_path) if session_path else None)
+        roots = list(dict.fromkeys(path for p in projects for path in (p['path'],p['skill_path'])))
+        inventory = catalog.refresh(snapshot, home, str(home), roots, Path(session_path) if session_path else None)
         # project_choices reads inventory roots. Use the same stable ids and names throughout.
         for p in connections.project_choices(snapshot):
-            if norm(p['path']) != norm(home):
+            if norm(p['path']) != norm(home) and norm(p['path']) not in {norm(p['skill_path']) for p in projects}:
                 by_path.setdefault(norm(p['path']), p)
         projects = list(by_path.values())
         user = read(snapshot/'user.json', {})
@@ -146,12 +152,14 @@ def collect(settings, work):
             except (AttributeError, KeyError, TypeError, ValueError, OSError):
                 pass
         directions = resource_view['directions']
+        sources, source_documents = scan(definitions(settings, projects, overlay))
+        integrate(addons, projects, sources['rows'], source_documents, instructions)
         stamp = datetime.now(timezone.utc).isoformat()
         from audit import audit
         reconciliation = audit(inventory, views, addons, session, projects, home)
         atomic_json(work/'reconciliation.json', reconciliation)
-        result = {'version': '3.1.0', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
-            'addons': addons, 'projects': projects, 'directions': directions,
+        result = {'version': '3.2.0', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
+            'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),
             'coverage': {'discovery': inventory.get('discovery_status'), 'session_at': session.get('observed_at'), 'reconciliation': reconciliation,

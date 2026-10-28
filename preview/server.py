@@ -22,6 +22,7 @@ from collect import collect, read, ROOT, runtime_path
 from controls import Controls, ControlError, Conflict
 from folder_window import open_folder
 from project_folders import folder_key, file_folder, decorate_projects
+from skill_sources import change as change_sources, settings_view, SettingsError
 
 APP = 'codex-catalog-overview-preview'
 WEB = Path(__file__).parent/'web'
@@ -48,6 +49,7 @@ class Preview:
             raise ValueError('Пробные записи должны храниться отдельно от рабочего каталога.')
         self.lock = threading.Lock()
         self.refresh_lock = threading.Lock()
+        self.refresh_again = threading.Event()
         self.job = {'state': 'idle'}
         self.watch_state = {'local_seconds': 15, 'account_minutes': 5, 'enabled': False}
         self.stop_watch = threading.Event()
@@ -86,19 +88,20 @@ class Preview:
     def set_project_folder(self, payload):
         project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)
         if not project or 'path' not in payload:
-            raise ValueError('Укажите проект и папку файлов.')
+            raise SettingsError('Укажите проект и папку файлов.')
         raw = payload['path']
         if raw is not None:
             if not isinstance(raw, str) or not raw.strip():
-                raise ValueError('Укажите существующую папку абсолютным путём.')
+                raise SettingsError('Укажите существующую папку абсолютным путём.')
             path = Path(raw.strip())
             if not path.is_absolute() or not path.is_dir():
-                raise ValueError('Укажите существующую папку абсолютным путём.')
+                raise SettingsError('Укажите существующую папку абсолютным путём.')
             raw = str(path.resolve())
+        changed = False
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
             if payload.get('revision') != overlay['revision']:
-                raise ValueError('Настройки изменились в другом окне. Обновите каталог и повторите сохранение.')
+                raise SettingsError('Настройки изменились в другом окне. Обновите каталог и повторите сохранение.')
             folders = overlay.setdefault('project_folders', {})
             key = folder_key(project)
             old = folders.get(key)
@@ -112,6 +115,23 @@ class Preview:
                     {'project': project['name'], 'before': before, 'after': file_folder(project, overlay),
                      'source': 'user' if raw else project.get('source', 'catalog')})
                 write(self.work/'annotations.json', overlay)
+                changed = True
+        if changed: self.refresh()
+        return self.state()
+
+    def set_skill_sources(self, payload):
+        projects = read(self.work/'snapshot.json', {}).get('projects', [])
+        with self.lock:
+            overlay = read(self.work/'annotations.json', {'revision':0,'items':{},'events':[]})
+            if payload.get('revision') != overlay['revision']:
+                raise SettingsError('Настройки изменились в другом окне. Обновите страницу и повторите действие.')
+            before = overlay.get('skill_sources', [])
+            after = change_sources(overlay, payload, projects)
+            if before != after:
+                overlay['skill_sources'] = after
+                self.event(overlay, 'skill_sources', 'workspace', {'action':payload['action'], 'before':before, 'after':after})
+                write(self.work/'annotations.json', overlay)
+        if before != after: self.refresh()
         return self.state()
 
     def open_legacy(self):
@@ -178,6 +198,7 @@ class Preview:
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
         return {**self.controls.decorate(snapshot), 'projects': decorate_projects(snapshot.get('projects', []), overlay),
+                'source_settings':settings_view(self.settings,snapshot.get('projects', []),overlay,snapshot),
                 'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
 
     def activation(self, payload):
@@ -186,7 +207,9 @@ class Preview:
 
     def refresh(self):
         if not self.refresh_lock.acquire(blocking=False):
+            self.refresh_again.set()
             return self.job
+        self.refresh_again.clear()
         self.job = {'state': 'running', 'started_at': datetime.now(timezone.utc).isoformat()}
         def run():
             try:
@@ -198,6 +221,7 @@ class Preview:
                 (self.work/'last-error.txt').write_text(type(error).__name__+': '+str(error), encoding='utf-8')
             finally:
                 self.refresh_lock.release()
+                if self.refresh_again.is_set() and not self.stop_watch.is_set(): self.refresh()
         threading.Thread(target=run, daemon=True).start()
         return self.job
 
@@ -264,6 +288,7 @@ def make_server(service, port):
                 if parsed.path == '/api/project': return self.send(service.add_project(payload), 202)
                 if parsed.path == '/api/open-project': return self.send(service.open_project(payload))
                 if parsed.path == '/api/project-folder': return self.send(service.set_project_folder(payload))
+                if parsed.path == '/api/skill-sources': return self.send(service.set_skill_sources(payload))
                 if parsed.path == '/api/legacy': return self.send(service.open_legacy())
                 if parsed.path == '/api/order': return self.send(service.reorder(payload))
                 if parsed.path == '/api/activation': return self.send(service.activation(payload))
@@ -281,7 +306,7 @@ def make_server(service, port):
                 value = read(service.work/'instructions.json', {}).get(key)
                 return self.send(value or {'error': 'Инструкция не подтверждена в текущей установке.'}, 200 if value else 404)
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/model.js': ('model.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/icon.svg': ('icon.svg', 'image/svg+xml')}
-            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'vendor/marked.js', 'vendor/purify.js')})
+            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'vendor/marked.js', 'vendor/purify.js')})
             if parsed.path not in files: return self.send({'error': 'Страница не найдена.'}, 404)
             name, mime = files[parsed.path]
             raw = assets[name].replace(b'__TOKEN__', token.encode()) if name == 'index.html' else assets[name]
@@ -290,6 +315,7 @@ def make_server(service, port):
             try: self.route(post)
             except Conflict as error: self.send({'error':str(error)},409)
             except ControlError as error: self.send({'error':str(error)},400)
+            except SettingsError as error: self.send({'error':str(error)},400)
             except (ValueError, TypeError, KeyError): self.send({'error': 'Не удалось сохранить. Проверьте поля или обновите сведения; текст остался в форме.'}, 400)
             except OSError: self.send({'error': 'Файл сейчас недоступен. Предыдущие записи сохранены.'}, 503)
             except subprocess.SubprocessError: self.send({'error': 'Прежний каталог не запустился. Его файлы сохранены.'}, 503)

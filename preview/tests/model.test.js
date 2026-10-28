@@ -52,3 +52,12 @@ test('reorder retains filtered-out cards and never duplicates an item',()=>{
  assert.deepEqual(reorderIds(['a','b'],'unknown','a'),['a','b']);
  assert.deepEqual(reorderIds(['a','b'],'a','a'),['a','b']);
 });
+
+test('selected project folder replaces the old local scope without promoting files',()=>{
+ const selected={...project,skill_path:'C:/real/game'};
+ const candidate={id:'found',kind:'skill',scope:'local',installed:false,file_found:true,project_ids:['game']};
+ const x={...addon,components:[global,local,{...local,id:'new',project_path:'C:/real/game'},candidate]};
+ assert.deepEqual(componentsFor(x,selected).map(c=>c.id),['s1','new','found']);
+ assert.equal(componentsFor(x,{id:'other',path:'C:/other'}).some(c=>c.id==='found'),false);
+ assert.equal(componentsFor(x,selected).find(c=>c.id==='found').installed,false);
+});

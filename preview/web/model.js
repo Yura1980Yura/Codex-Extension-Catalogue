@@ -24,9 +24,9 @@ export function componentsFor(addon,project=null){
     }
    }
   }else{
-   if(project&&component.scope==='local'&&!inside(project.path,component.project_path))continue;
+   if(project&&component.scope==='local'&&!(component.project_ids||[]).includes(project.id)&&!(component.project_path&&inside(project.skill_path||project.path,component.project_path)))continue;
    const next={...component};
-   const observed=(component.observations||[]).filter(o=>o.kind==='discovery'&&project&&normal(o.cwd)===normal(project.path));
+   const observed=(component.observations||[]).filter(o=>o.kind==='discovery'&&project&&normal(o.cwd)===normal(project.skill_path||project.path));
    if(observed.length){
     const fresh=component.config_authoritative?observed.filter(o=>Date.parse(o.at)>=component.config_changed_at):observed;
     if(fresh.length)next.enabled=fresh.some(o=>o.enabled===true);
