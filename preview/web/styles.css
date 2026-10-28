@@ -28,6 +28,9 @@ h3{font-size:16px;font-weight:650}
 .nav-link .count{margin-left:auto;font-size:12px;opacity:.8}
 .project-dot{width:7px;height:7px;border:1.5px solid currentColor;border-radius:50%;margin:0 6px;flex:none}
 .project-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-missing{display:block;color:#855b15;font-size:11px;line-height:1.4;white-space:normal}
+.project-availability.warning,.danger{color:#9a382e}
+.skill-file-tools{padding:12px 0;border-bottom:1px solid var(--line)}
 .sidebar-bottom{margin-top:auto;padding:28px 12px 0;font-size:12px}
 .sidebar-bottom p{color:var(--muted);margin:10px 0}
 .sidebar-bottom a{font-size:12px}

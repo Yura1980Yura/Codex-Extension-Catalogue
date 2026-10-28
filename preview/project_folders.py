@@ -18,5 +18,5 @@ def decorate_projects(projects, overlay):
         result.append({**project, 'file_path': path,
             'skill_path': path,
             'file_path_source': 'user' if custom else project.get('source', 'catalog'),
-            'file_path_available': Path(path).is_dir()})
+            'file_path_available': project.get('available', False) if not custom else project.get('file_path_available', False)})
     return result

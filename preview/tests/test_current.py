@@ -33,7 +33,8 @@ class Current(unittest.TestCase):
         registry,warning=registered_projects(self.home,lambda p:'game')
         self.assertIsNone(warning)
         merged=merge_projects([{'id':'old','name':'Old label','path':str(self.folder)},{'id':'other','name':'Game','path':str(self.root/'other')}],registry)
-        self.assertEqual(len(merged),2);self.assertEqual(merged[0]['name'],'Game');self.assertEqual(merged[0]['source'],'codex');self.assertIn('other',merged[1]['name'])
+        self.assertEqual(len(merged),1);self.assertEqual(merged[0]['name'],'Game');self.assertEqual(merged[0]['source'],'codex')
+        self.assertEqual(merge_projects(merged, []), [])
         self.assertEqual(registry[0]['additional_folders'],['C:/other-access'])
     def test_signature_detects_install_remove_and_rename_but_not_chat_activity(self):
         settings=self.service.settings

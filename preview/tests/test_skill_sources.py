@@ -71,7 +71,9 @@ class SkillSources(unittest.TestCase):
 
     def test_plugin_cache_does_not_create_installed_addons(self):
         self.skill(self.home/'.codex/plugins/cache/vendor/plugin/1/skills')
-        result,addons,_=self.result();self.assertEqual(addons,[])
+        result,addons,_=self.result();self.assertEqual(len(addons),1)
+        self.assertFalse(addons[0]['components'][0]['installed'])
+        self.assertTrue(addons[0]['components'][0]['managed_package'])
         self.assertEqual(next(r for r in result['rows'] if r['files'])['files'][0]['availability'],'cache')
 
     def test_disabled_missing_empty_and_invalid_are_distinguished(self):
@@ -102,7 +104,7 @@ class SkillSources(unittest.TestCase):
         service=Preview(self.settings,self.work)
         request={'action':'save','path':str(path.parent),'scope':'global','revision':0}
         with patch.object(service,'refresh') as refresh:
-            state=service.set_skill_sources(request);refresh.assert_called_once()
+            state=service.set_skill_sources(request);refresh.assert_not_called()
             self.assertEqual(state['overlay']['revision'],1)
             self.assertEqual(state['overlay']['events'][0]['kind'],'preview_skill_sources')
             with self.assertRaises(ValueError):service.set_skill_sources({**request,'path':str(self.root)})

@@ -66,27 +66,27 @@ def collect(settings, work):
         for name in ('inventory.json', 'user.json', 'settings.json', 'history.jsonl', 'connection-checks.json'):
             if (data/name).exists():
                 shutil.copy2(data/name, snapshot/name)
-        choices = connections.project_choices(snapshot)
-        by_path = {norm(p['path']): p for p in choices}
-        for raw in settings.get('projects', []):
-            path = Path(raw['path']).resolve()
-            if path.is_dir():
-                by_path[norm(path)] = {'id': connections.project_id(str(path)), 'name': raw.get('name') or path.name, 'path': str(path)}
         registry, registry_warning = registered_projects(home, connections.project_id)
-        projects = merge_projects(list(by_path.values()), registry)
+        previous = read(work/'snapshot.json', {})
+        projects = ([dict(p) for p in previous.get('projects', []) if p.get('source') == 'codex']
+                    if registry_warning else merge_projects([], registry))
+        for project in projects:
+            project['available'] = Path(project['path']).is_dir()
         overlay = read(work/'annotations.json', {})
         for project in projects:
             project['skill_path'] = file_folder(project, overlay)
-        by_path = {norm(p['path']): p for p in projects}
+            project['file_path_available'] = Path(project['skill_path']).is_dir()
         session_path = settings.get('session')
         session = read(session_path, {}) if session_path else {}
         roots = list(dict.fromkeys(path for p in projects for path in (p['path'],p['skill_path'])))
+        # Legacy inventories/settings are inputs for annotations, never project membership.
+        old_settings = read(snapshot/'settings.json', {})
+        old_settings['project_roots'] = roots
+        atomic_json(snapshot/'settings.json', old_settings)
+        old_inventory = read(snapshot/'inventory.json', {'skills': {}})
+        old_inventory['projects'] = roots
+        atomic_json(snapshot/'inventory.json', old_inventory)
         inventory = catalog.refresh(snapshot, home, str(home), roots, Path(session_path) if session_path else None)
-        # project_choices reads inventory roots. Use the same stable ids and names throughout.
-        for p in connections.project_choices(snapshot):
-            if norm(p['path']) != norm(home) and norm(p['path']) not in {norm(p['skill_path']) for p in projects}:
-                by_path.setdefault(norm(p['path']), p)
-        projects = list(by_path.values())
         user = read(snapshot/'user.json', {})
         _, cards = catalog.load_cards(snapshot, home)
         composition = read(Path(__file__).parent/'composition.json', {})
@@ -154,11 +154,19 @@ def collect(settings, work):
         directions = resource_view['directions']
         sources, source_documents = scan(definitions(settings, projects, overlay))
         integrate(addons, projects, sources['rows'], source_documents, instructions)
+        # A file is a finding until a fresh Codex discovery confirms this path.
+        for addon in addons:
+            for component in addon['components']:
+                if component['kind'] == 'skill':
+                    confirmed = any(o.get('kind') == 'discovery' for o in component.get('observations', []))
+                    component['installed'] = bool(component.get('installed') and confirmed)
+                    if component.get('file_found') and not confirmed and not component.get('managed_package'):
+                        component['basis'] = 'Файл найден. Codex не подтвердил доступность при последней сверке.'
         stamp = datetime.now(timezone.utc).isoformat()
         from audit import audit
         reconciliation = audit(inventory, views, addons, session, projects, home)
         atomic_json(work/'reconciliation.json', reconciliation)
-        result = {'version': '3.2.0', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
+        result = {'version': '3.3.2', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),

@@ -48,9 +48,26 @@ test('multiselect is OR within one facet and AND across facets',()=>{
  assert.equal(visible(d,{direction:[],scope:[],enabled:[],tag:[]}).length,2);
 });
 test('reorder retains filtered-out cards and never duplicates an item',()=>{
- assert.deepEqual(reorderIds(['a','hidden','b','c'],'c','a'),['c','a','hidden','b']);
+ assert.deepEqual(reorderIds(['a','hidden','b','c'],'c','a'),['c','hidden','b','a']);
  assert.deepEqual(reorderIds(['a','b'],'unknown','a'),['a','b']);
+ assert.deepEqual(reorderIds(['a','b'],'a','unknown'),['a','b']);
  assert.deepEqual(reorderIds(['a','b'],'a','a'),['a','b']);
+});
+
+test('adjacent tiles exchange places in both directions',()=>{
+ assert.deepEqual(reorderIds(['a','b','c'],'a','b'),['b','a','c']);
+ assert.deepEqual(reorderIds(['a','b','c'],'b','a'),['b','a','c']);
+});
+
+test('any pair in a grid swaps symmetrically without shifting other tiles',()=>{
+ const order=['top-left','top-middle','top-right','bottom-left','bottom-middle','bottom-right'];
+ for(let from=0;from<order.length;from++)for(let to=0;to<order.length;to++){
+  const result=reorderIds(order,order[from],order[to]);
+  assert.equal(result[from],order[to]);assert.equal(result[to],order[from]);
+  for(let i=0;i<order.length;i++)if(i!==from&&i!==to)assert.equal(result[i],order[i]);
+  assert.deepEqual(reorderIds(result,order[from],order[to]),order);
+  assert.deepEqual(order,['top-left','top-middle','top-right','bottom-left','bottom-middle','bottom-right']);
+ }
 });
 
 test('selected project folder replaces the old local scope without promoting files',()=>{

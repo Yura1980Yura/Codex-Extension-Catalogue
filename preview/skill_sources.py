@@ -138,14 +138,15 @@ def integrate(addons, projects, rows, documents, instructions):
         for file in row['files']:
             if file.get('error'): continue
             key = file['key']
-            if key not in known and row['category'] != 'plugins':
+            if key not in known:
                 doc = documents[key]
                 sid = 'source:'+hashlib.sha256(key.encode()).hexdigest()[:24]
                 card = {'id':sid, 'name':doc['name'], 'description':doc['description'], 'locations':[], 'observations':[]}
                 component = {'id':sid+':file', 'skill_id':sid, 'name':doc['name'], 'kind':'skill',
                     'path':doc['path'], 'scope':row['scope'], 'installed':False, 'file_found':True,
                     'enabled':None, 'project_ids':[], 'observations':[], 'checked_at':row['checked_at'],
-                    'basis':'Файл найден. Доступность Codex не подтверждена.'}
+                    'managed_package':row['category']=='plugins',
+                    'basis':'Файл в кеше плагина. Подключение пакета Codex не подтверждено.' if row['category']=='plugins' else 'Файл найден. Доступность Codex не подтверждена.'}
                 addon = {'id':'extension:'+sid, 'title':doc['name'], 'description':doc['description'],
                     'profile':{}, 'components':[component], 'skills':[card], 'directions':[], 'tags':[],
                     'origin':'unknown', 'billing':'unknown', 'bindings':[], 'notes':[], 'related':[], 'favorite':False}
@@ -163,7 +164,7 @@ def integrate(addons, projects, rows, documents, instructions):
             file.update(addon_id=addon['id'], component_id=component['id'])
             observed = [o for o in component.get('observations', []) if o.get('kind')=='discovery']
             observed=[o for o in observed if o.get('cwd') and canonical(o['cwd'])==canonical(row['context_path'])]
-            file['availability'] = 'enabled' if any(o.get('enabled') is True for o in observed) else 'disabled' if observed and all(o.get('enabled') is False for o in observed) else 'unconfirmed'
+            file['availability'] = 'enabled' if any(o.get('enabled') is True for o in observed) else 'disabled' if observed and all(o.get('enabled') is False for o in observed) else 'cache' if component.get('managed_package') else 'unconfirmed'
     return addons
 
 def settings_view(settings, projects, overlay, snapshot):

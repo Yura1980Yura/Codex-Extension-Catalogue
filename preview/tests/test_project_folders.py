@@ -27,7 +27,7 @@ class ProjectFolderTests(unittest.TestCase):
         self.assertEqual(state['projects'][0]['file_path'],str(self.actual.resolve()))
         self.assertEqual(state['projects'][0]['path'],str(self.codex))
         self.assertEqual(state['projects'][0]['skill_path'],str(self.actual.resolve()))
-        self.refreshing.assert_called_once()
+        self.refreshing.assert_not_called()
         self.assertEqual(state['projects'][0]['file_path_source'],'user')
         self.assertEqual(state['projects'][1]['file_path'],str(self.codex))
         self.assertEqual(read(self.work/'snapshot.json'),self.snapshot)

@@ -23,6 +23,7 @@ from controls import Controls, ControlError, Conflict
 from folder_window import open_folder
 from project_folders import folder_key, file_folder, decorate_projects
 from skill_sources import change as change_sources, settings_view, SettingsError
+from skill_files import SkillFiles, SkillFileError, component as skill_component
 
 APP = 'codex-catalog-overview-preview'
 WEB = Path(__file__).parent/'web'
@@ -51,26 +52,14 @@ class Preview:
         self.refresh_lock = threading.Lock()
         self.refresh_again = threading.Event()
         self.job = {'state': 'idle'}
-        self.watch_state = {'local_seconds': 15, 'account_minutes': 5, 'enabled': False}
+        self.watch_state = {'enabled': False, 'mode': 'manual'}
         self.stop_watch = threading.Event()
         self.controls = Controls(settings,self.work)
+        self.skill_files = SkillFiles(settings, self.work)
 
     def start_watch(self):
-        from watch import signature
-        self.watch_state['enabled'] = True
-        def monitor():
-            previous = None
-            last = 0
-            while not self.stop_watch.is_set():
-                try:
-                    current = signature(self.settings, self.work)
-                    if not self.refresh_lock.locked() and (current != previous or time.monotonic()-last >= 300):
-                        self.refresh()
-                        previous, last = current, time.monotonic()
-                except (OSError, ValueError):
-                    pass  # A partially written file will be read on the next tick.
-                self.stop_watch.wait(15)
-        threading.Thread(target=monitor, daemon=True).start()
+        # Kept as a compatibility hook. Discovery is explicitly user-triggered.
+        return None
 
     def open_project(self, payload):
         project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)
@@ -116,7 +105,6 @@ class Preview:
                      'source': 'user' if raw else project.get('source', 'catalog')})
                 write(self.work/'annotations.json', overlay)
                 changed = True
-        if changed: self.refresh()
         return self.state()
 
     def set_skill_sources(self, payload):
@@ -131,7 +119,6 @@ class Preview:
                 overlay['skill_sources'] = after
                 self.event(overlay, 'skill_sources', 'workspace', {'action':payload['action'], 'before':before, 'after':after})
                 write(self.work/'annotations.json', overlay)
-        if before != after: self.refresh()
         return self.state()
 
     def open_legacy(self):
@@ -163,25 +150,7 @@ class Preview:
         return data
 
     def add_project(self, payload):
-        if self.refresh_lock.locked():
-            raise ValueError('Дождитесь окончания текущей сверки и повторите добавление.')
-        name, raw = payload.get('name'), payload.get('path')
-        if not isinstance(name, str) or not name.strip() or len(name) > 100 or not isinstance(raw, str):
-            raise ValueError('Укажите название и папку проекта.')
-        path = Path(raw)
-        if not path.is_absolute() or not path.is_dir():
-            raise ValueError('Укажите существующую папку абсолютным путём.')
-        with self.lock:
-            existing = self.settings.setdefault('projects', [])
-            normalized = os.path.normcase(str(path.resolve()))
-            if any(os.path.normcase(str(Path(p['path']).resolve())) == normalized for p in existing):
-                raise ValueError('Эта папка уже добавлена.')
-            existing.append({'name': name.strip(), 'path': str(path.resolve())})
-            write(self.work/'settings.json', self.settings)
-            data = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
-            self.event(data, 'project', 'workspace', name.strip()+' — '+str(path.resolve()))
-            write(self.work/'annotations.json', data)
-        return self.refresh()
+        raise SettingsError('Добавьте проект в Codex, затем нажмите «Сверить с Codex».')
 
     @staticmethod
     def event(data, action, key, value):
@@ -197,9 +166,46 @@ class Preview:
             return {'loading': True, 'job': self.job}
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
-        return {**self.controls.decorate(snapshot), 'projects': decorate_projects(snapshot.get('projects', []), overlay),
+        decorated = self.skill_files.decorate(self.controls.decorate(snapshot))
+        return {**decorated, 'projects': decorate_projects(snapshot.get('projects', []), overlay),
                 'source_settings':settings_view(self.settings,snapshot.get('projects', []),overlay,snapshot),
-                'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
+                'overlay': overlay, 'job': self.job, 'watch': self.watch_state,
+                'removed_skills':self.skill_files.removed()}
+
+    def skill_plan(self, payload):
+        return self.skill_files.plan(read(self.work/'snapshot.json', {}), payload)
+
+    def skill_change(self, payload):
+        if not self.refresh_lock.acquire(blocking=False):
+            raise SkillFileError('Дождитесь завершения сверки.')
+        try:
+            with self.lock:
+                snapshot = read(self.work/'snapshot.json', {})
+                def record(operation):
+                    overlay = read(self.work/'annotations.json', {'revision':0, 'items':{}, 'events':[]})
+                    self.event(overlay, 'skill_'+operation['action'], operation['id'], operation)
+                    write(self.work/'annotations.json', overlay)
+                result = self.skill_files.apply(snapshot, payload, record)
+                if result['action'] == 'remove':
+                    # This is a known filesystem operation, not a discovery pass.
+                    path = skill_component(snapshot, payload)['path']
+                    for addon in snapshot.get('addons', []):
+                        for c in addon.get('components', []):
+                            if c.get('path') == path:
+                                c.update(installed=False, enabled=None, file_found=False, basis='Инструкция SKILL.md удалена. Папка и остальные файлы сохранены. Выполните новую сверку.')
+                    for row in snapshot.get('skill_sources', {}).get('rows', []):
+                        row['files'] = [f for f in row.get('files', []) if f['path'] != path]
+                        if row.get('status') == 'ok' and not row['files']: row['status'] = 'empty'
+                    write(self.work/'snapshot.json', snapshot)
+            return {'result':result, 'state':self.state()}
+        finally:
+            self.refresh_lock.release()
+
+    def reveal_skill(self, payload):
+        c = skill_component(read(self.work/'snapshot.json', {}), payload)
+        path = Path(c['path'])
+        if not path.is_file(): raise SkillFileError('Файл уже недоступен. Сверьте каталог с Codex.')
+        return open_folder(path.resolve().parent)
 
     def activation(self, payload):
         result = self.controls.change(read(self.work/'snapshot.json',{}),payload)
@@ -292,6 +298,9 @@ def make_server(service, port):
                 if parsed.path == '/api/legacy': return self.send(service.open_legacy())
                 if parsed.path == '/api/order': return self.send(service.reorder(payload))
                 if parsed.path == '/api/activation': return self.send(service.activation(payload))
+                if parsed.path == '/api/skill-plan': return self.send(service.skill_plan(payload))
+                if parsed.path == '/api/skill-change': return self.send(service.skill_change(payload))
+                if parsed.path == '/api/reveal-skill': return self.send(service.reveal_skill(payload))
                 if parsed.path == '/api/shutdown':
                     self.send({'stopped': True})
                     service.stop_watch.set()
@@ -306,7 +315,7 @@ def make_server(service, port):
                 value = read(service.work/'instructions.json', {}).get(key)
                 return self.send(value or {'error': 'Инструкция не подтверждена в текущей установке.'}, 200 if value else 404)
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/model.js': ('model.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/icon.svg': ('icon.svg', 'image/svg+xml')}
-            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'vendor/marked.js', 'vendor/purify.js')})
+            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'state.js', 'skill-actions.js', 'vendor/marked.js', 'vendor/purify.js')})
             if parsed.path not in files: return self.send({'error': 'Страница не найдена.'}, 404)
             name, mime = files[parsed.path]
             raw = assets[name].replace(b'__TOKEN__', token.encode()) if name == 'index.html' else assets[name]
@@ -316,6 +325,7 @@ def make_server(service, port):
             except Conflict as error: self.send({'error':str(error)},409)
             except ControlError as error: self.send({'error':str(error)},400)
             except SettingsError as error: self.send({'error':str(error)},400)
+            except SkillFileError as error: self.send({'error':str(error)},400)
             except (ValueError, TypeError, KeyError): self.send({'error': 'Не удалось сохранить. Проверьте поля или обновите сведения; текст остался в форме.'}, 400)
             except OSError: self.send({'error': 'Файл сейчас недоступен. Предыдущие записи сохранены.'}, 503)
             except subprocess.SubprocessError: self.send({'error': 'Прежний каталог не запустился. Его файлы сохранены.'}, 503)

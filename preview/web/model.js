@@ -6,8 +6,11 @@ const inside=(p,r)=>normal(p)===normal(r)||normal(p).startsWith(normal(r)+'/');
 export const values=v=>Array.isArray(v)?v:v?[v]:[];
 const matches=(filter,value)=>!values(filter).length||values(filter).includes(value);
 export function reorderIds(order, moving, target){
- if(moving===target||!order.includes(moving)||!order.includes(target))return [...order];
- const result=order.filter(id=>id!==moving);result.splice(result.indexOf(target),0,moving);return result;
+ const from=order.indexOf(moving),to=order.indexOf(target),result=[...order];
+ if(from<0||to<0||from===to)return result;
+ // Exchange the selected pair; every other position remains unchanged.
+ [result[from],result[to]]=[result[to],result[from]];
+ return result;
 }
 
 export function componentsFor(addon,project=null){

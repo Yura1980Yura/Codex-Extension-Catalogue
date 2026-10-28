@@ -47,12 +47,13 @@ class Isolation(unittest.TestCase):
         self.assertEqual(e.exception.code,404)
     def test_working_data_cannot_be_used_for_preview(self):
         with self.assertRaises(ValueError):Preview({'source_data':str(self.root)},self.root)
-    def test_new_project_only_updates_preview_settings_and_history(self):
+    def test_project_registration_is_owned_by_codex(self):
         project=self.root/'project';project.mkdir()
         self.service.refresh=lambda:{'state':'done'}
-        self.service.add_project({'name':'Test project','path':str(project)})
+        with self.assertRaisesRegex(ValueError, 'Добавьте проект в Codex'):
+            self.service.add_project({'name':'Test project','path':str(project)})
         self.assertFalse(list(project.iterdir()))
-        self.assertEqual(self.service.state()['overlay']['events'][0]['kind'],'preview_project')
-        with self.assertRaises(ValueError):self.service.add_project({'name':'Again','path':str(project)})
+        self.assertFalse((self.root/'settings.json').exists())
+        self.assertFalse(self.service.state()['overlay']['events'])
 
 if __name__=='__main__':unittest.main()

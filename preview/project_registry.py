@@ -12,8 +12,8 @@ def registered_projects(home, project_id):
     try:
         state = json.loads(path.read_text('utf-8-sig'))
     except (OSError, ValueError):
-        return [], 'Список проектов Codex сейчас недоступен; сохранены папки каталога.'
-    values = state.get('local-projects', {})
+        return [], 'Список проектов Codex сейчас недоступен. Показан последний подтверждённый список.'
+    values = state.get('local-projects')
     if not isinstance(values, dict):
         return [], 'Формат списка проектов Codex изменился.'
     order = state.get('project-order', [])
@@ -32,15 +32,5 @@ def registered_projects(home, project_id):
     return result, None
 
 def merge_projects(existing, registry):
-    by_path = {norm(p['path']): {**p, 'source': 'catalog', 'available': Path(p['path']).is_dir()} for p in existing}
-    for p in registry:
-        by_path[norm(p['path'])] = {**by_path.get(norm(p['path']), {}), **p}
-    # Preserve distinct folders even when their human names coincide.
-    names = {p['name'].casefold() for p in registry}
-    for p in by_path.values():
-        if p['source'] != 'codex' and p['name'].casefold() in names:
-            p['name'] += ' · ' + Path(p['path']).name
-            p['name_note'] = 'Отдельная папка каталога. У одноимённого проекта в Codex другой путь.'
-    ordered = [by_path[norm(p['path'])] for p in registry]
-    ordered.extend(p for p in by_path.values() if p['source'] != 'codex')
-    return ordered
+    # Only the native registry establishes project membership, names and order.
+    return [dict(p) for p in registry]
