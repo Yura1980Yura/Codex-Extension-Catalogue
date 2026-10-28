@@ -3,6 +3,12 @@ export const scopeNames={global:'Глобально',local:'Локально',un
 export const origins={builtin:'От OpenAI',personal:'Мои разработки',third_party:'Других авторов',unknown:'Источник не уточнён'};
 const normal=p=>String(p||'').replaceAll('\\','/').replace(/\/$/,'').toLowerCase();
 const inside=(p,r)=>normal(p)===normal(r)||normal(p).startsWith(normal(r)+'/');
+export const values=v=>Array.isArray(v)?v:v?[v]:[];
+const matches=(filter,value)=>!values(filter).length||values(filter).includes(value);
+export function reorderIds(order, moving, target){
+ if(moving===target||!order.includes(moving)||!order.includes(target))return [...order];
+ const result=order.filter(id=>id!==moving);result.splice(result.indexOf(target),0,moving);return result;
+}
 
 export function componentsFor(addon,project=null){
  const result=[];
@@ -53,12 +59,12 @@ export function visible(data,filters,ignoreType=false){
   if(filters.presence==='suggested'&&found!=='suggested')return [];
   const overlay=data.overlay?.items?.[addon.id]||{};
   if(filters.favorite&&!(overlay.favorite??addon.favorite))return [];
-  if(filters.direction&&!addon.directions.includes(filters.direction))return [];
-  if(filters.origin&&addon.origin!==filters.origin)return [];
-  if(filters.billing&&addon.billing!==filters.billing)return [];
-  if(filters.tag&&![...addon.tags,...(overlay.tags||[])].includes(filters.tag))return [];
-  const matching=parts.filter(c=>(filters.presence!=='installed'||c.installed)&&(filters.presence!=='unconfirmed'||!c.installed)&&(!filters.scope||c.scope===filters.scope)&&(!filters.enabled||(filters.enabled==='on'?c.enabled===true:filters.enabled==='off'?c.enabled===false:c.enabled==null)));
-  if((filters.scope||filters.enabled)&&!matching.length)return [];
+  if(values(filters.direction).length&&!values(filters.direction).some(v=>addon.directions.includes(v)))return [];
+  if(!matches(filters.origin,addon.origin))return [];
+  if(!matches(filters.billing,addon.billing))return [];
+  if(values(filters.tag).length&&!values(filters.tag).some(v=>[...addon.tags,...(overlay.tags||[])].includes(v)))return [];
+  const matching=parts.filter(c=>(filters.presence!=='installed'||c.installed)&&(filters.presence!=='unconfirmed'||!c.installed)&&matches(filters.scope,c.scope)&&matches(filters.enabled,c.enabled===true?'on':c.enabled===false?'off':'unknown'));
+  if((values(filters.scope).length||values(filters.enabled).length)&&!matching.length)return [];
   if(!ignoreType&&(filters.types||[]).some(t=>!matching.some(c=>c.kind===t)))return [];
   const q=(filters.query||'').toLocaleLowerCase().trim();
   if(q&&!`${addon.title} ${addon.description} ${addon.tags.join(' ')} ${parts.map(c=>c.name).join(' ')}`.toLocaleLowerCase().includes(q))return [];

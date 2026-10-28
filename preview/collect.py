@@ -9,6 +9,7 @@ import sys
 import tempfile
 
 from model import build, norm
+from project_registry import registered_projects, merge_projects
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -69,7 +70,9 @@ def collect(settings, work):
             path = Path(raw['path']).resolve()
             if path.is_dir():
                 by_path[norm(path)] = {'id': connections.project_id(str(path)), 'name': raw.get('name') or path.name, 'path': str(path)}
-        projects = list(by_path.values())
+        registry, registry_warning = registered_projects(home, connections.project_id)
+        projects = merge_projects(list(by_path.values()), registry)
+        by_path = {norm(p['path']): p for p in projects}
         session_path = settings.get('session')
         session = read(session_path, {}) if session_path else {}
         inventory = catalog.refresh(snapshot, home, str(home), [p['path'] for p in projects], Path(session_path) if session_path else None)
@@ -96,7 +99,14 @@ def collect(settings, work):
         contexts = [('all', None)] + [(p['id'], p['id']) for p in projects]
         def inspect(pair):
             key, pid = pair
-            return key, connections.view(snapshot, home, pid)
+            # The legacy adapter takes an exclusive storage lock even when
+            # reading. Give each parallel context its own temporary store.
+            with tempfile.TemporaryDirectory(prefix='context-', dir=work) as context:
+                context = Path(context)
+                for name in ('inventory.json', 'user.json', 'settings.json', 'connection-checks.json'):
+                    if (snapshot/name).exists():
+                        shutil.copy2(snapshot/name, context/name)
+                return key, connections.view(context, home, pid)
         with ThreadPoolExecutor(max_workers=3) as pool:
             views = dict(pool.map(inspect, contexts))
         # The legacy resource adapter has valuable curated descriptions and user overlays.
@@ -137,11 +147,15 @@ def collect(settings, work):
                 pass
         directions = resource_view['directions']
         stamp = datetime.now(timezone.utc).isoformat()
-        result = {'version': '3.0-preview.1', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
+        from audit import audit
+        reconciliation = audit(inventory, views, addons, session, projects, home)
+        atomic_json(work/'reconciliation.json', reconciliation)
+        result = {'version': '3.0.0', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions,
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),
-            'coverage': {'discovery': inventory.get('discovery_status'), 'session_at': session.get('observed_at'),
+            'coverage': {'discovery': inventory.get('discovery_status'), 'session_at': session.get('observed_at'), 'reconciliation': reconciliation,
+                'project_registry_warning': registry_warning,
                 'session_label': session.get('label'), 'views': {key: {k: v.get(k) for k in ('checked_at', 'status', 'apps_status', 'warning', 'coverage')} for key, v in views.items()},
                 'limits': ['Проверены зарегистрированные папки этого компьютера.', 'Снимок метаданных чата имеет отдельную дату; остальные чаты автоматически не просматриваются.', 'Наличие файла или включение не доказывает успешное выполнение задачи.']},
             'legacy_url': settings.get('legacy_url', 'http://127.0.0.1:8768'),

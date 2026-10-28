@@ -1,0 +1,12 @@
+{
+  "name": "Навыки — каталог Codex",
+  "version": "3.0.0",
+  "status": "current",
+  "date": "2026-10-28",
+  "entry": "launch.py",
+  "interface": "preview/",
+  "legacy_interface": "app/manager/",
+  "legacy_status": "retained_as_history",
+  "repository": "https://github.com/Yura1980Yura/Skills-Catalogue",
+  "branch": "codex/catalog-v2"
+}

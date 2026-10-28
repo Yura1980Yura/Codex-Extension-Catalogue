@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {componentsFor,visible,presence} from '../web/model.js';
+import {componentsFor,visible,presence,reorderIds} from '../web/model.js';
 const global={id:'s1',kind:'skill',scope:'global',installed:true,enabled:true};
 const local={id:'s2',kind:'skill',scope:'local',project_path:'C:/projects/game',installed:true,enabled:true};
 const project={id:'game',path:'C:/projects/game'};
@@ -26,4 +26,17 @@ test('unconfirmed skill cannot satisfy installed skill plus MCP filter',()=>{
  const d={...data,addons:[{...addon,components:[{...global,installed:false},{id:'m',kind:'mcp',scope:'global',installed:true,enabled:true}]}]};
  assert.equal(visible(d,{presence:'installed',types:['skill','mcp']}).length,0);
  assert.equal(visible(d,{presence:'unconfirmed',types:['skill']}).length,1);
+});
+test('multiselect is OR within one facet and AND across facets',()=>{
+ const d={...data,addons:[{...addon,directions:['design'],origin:'personal',tags:['a']},{...addon,id:'second',directions:['development'],origin:'builtin',tags:['b']}]};
+ assert.equal(visible(d,{direction:['design','development']}).length,2);
+ assert.equal(visible(d,{direction:['design','development'],origin:['personal']}).length,1);
+ assert.equal(visible(d,{scope:['global','local'],types:['mcp'],tag:['a','b']}).length,2);
+ assert.equal(visible(d,{scope:['local'],types:['mcp']}).length,0);
+ assert.equal(visible(d,{direction:[],scope:[],enabled:[],tag:[]}).length,2);
+});
+test('reorder retains filtered-out cards and never duplicates an item',()=>{
+ assert.deepEqual(reorderIds(['a','hidden','b','c'],'c','a'),['c','a','hidden','b']);
+ assert.deepEqual(reorderIds(['a','b'],'unknown','a'),['a','b']);
+ assert.deepEqual(reorderIds(['a','b'],'a','a'),['a','b']);
 });

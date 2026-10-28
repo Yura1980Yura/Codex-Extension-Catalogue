@@ -18,7 +18,7 @@ def sha(raw):
 
 def verify(bundle):
     manifest = json.loads((bundle/"MANIFEST.json").read_text("utf-8"))
-    actual = {p.relative_to(bundle).as_posix() for p in bundle.rglob("*") if p.is_file() and p != bundle/"MANIFEST.json" and not any(x in p.relative_to(bundle).parts for x in ("__pycache__", ".git", ".pytest_cache", ".venv"))}
+    actual = {p.relative_to(bundle).as_posix() for p in bundle.rglob("*") if p.is_file() and p != bundle/"MANIFEST.json" and not any(x in p.relative_to(bundle).parts for x in ("__pycache__", ".git", ".pytest_cache", ".venv", ".local", "node_modules"))}
     if actual != set(manifest["files"]):
         raise ValueError("Состав комплекта изменён. Используйте исходный распакованный архив.")
     for name, expected in manifest["files"].items():
@@ -53,6 +53,8 @@ def configure(bundle, home, offline=False, codex=None):
         stage = Path(tempfile.mkdtemp(prefix=".naviki-", dir=runtime.parent))
         try:
             shutil.copytree(bundle/"app", stage, dirs_exist_ok=True)
+            if (bundle/"preview").is_dir():
+                shutil.copytree(bundle/"preview", stage/"overview", ignore=shutil.ignore_patterns('node_modules', 'tests', '__pycache__'))
             own_skill = stage/"skill-catalog"
             raw = (own_skill/"SKILL.md").read_bytes()
             identity = os.path.normcase(str(skill.resolve()))
@@ -108,6 +110,10 @@ def configure(bundle, home, offline=False, codex=None):
         return value.replace('%', '%%')
     command = '@echo off\r\nsetlocal DisableDelayedExpansion\r\nchcp 65001 >nul\r\nstart "" "'+batch_path(interpreter)+'" -X utf8 -B "'+batch_path(runtime/"manager/launch.py")+'"\r\n'
     launcher = home/"Documents/Naviki/Открыть каталог.cmd"
+    (launcher.parent/"Открыть прежний каталог.cmd").write_bytes(command.encode("utf-8"))
+    if (runtime/"overview/server.py").is_file():
+        command = '@echo off\r\nsetlocal DisableDelayedExpansion\r\nchcp 65001 >nul\r\nstart "" "'+batch_path(interpreter)+'" -X utf8 -B "'+batch_path(runtime/"overview/server.py")+'" --open\r\n'
+        atomic_json(runtime/".local/catalog-current/settings.json", {"runtime":str(runtime), "source_data":str(data), "home":str(home)})
     launcher.write_bytes(command.encode("utf-8"))
     result = {"installed":str(runtime), "skill":str(skill), "data":str(data), "notes":str(docs), "launcher":str(launcher), "files_verified":installed["files_verified"], "discovery": "skipped_for_isolated_test" if offline else inventory["discovery_status"], "warnings":inventory.get("warnings",[]), "exported":exported["files_verified"]}
     atomic_json(runtime/"setup-result.json", result)
@@ -130,7 +136,12 @@ def main():
     else:
         result = configure(BUNDLE, args.home, args.offline, args.codex_executable)
         if not args.no_launch and not args.offline:
-            subprocess.run([sys.executable,"-X","utf8","-B",str(Path(result["installed"])/"manager/launch.py")],check=True)
+            entry = Path(result["installed"])/"overview/server.py"
+            if entry.is_file():
+                flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+                subprocess.Popen([sys.executable,"-X","utf8","-B",str(entry),"--open"], creationflags=flags)
+            else:
+                subprocess.run([sys.executable,"-X","utf8","-B",str(Path(result["installed"])/"manager/launch.py")],check=True)
     print(json.dumps(result,ensure_ascii=False,indent=2))
 
 
