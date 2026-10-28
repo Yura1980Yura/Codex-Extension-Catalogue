@@ -27,7 +27,14 @@ export function componentsFor(addon,project=null){
    if(project&&component.scope==='local'&&!inside(project.path,component.project_path))continue;
    const next={...component};
    const observed=(component.observations||[]).filter(o=>o.kind==='discovery'&&project&&normal(o.cwd)===normal(project.path));
-   if(observed.length&&!component.config_authoritative)next.enabled=observed.some(o=>o.enabled===true);
+   if(observed.length){
+    const fresh=component.config_authoritative?observed.filter(o=>Date.parse(o.at)>=component.config_changed_at):observed;
+    if(fresh.length)next.enabled=fresh.some(o=>o.enabled===true);
+    else if(observed.some(o=>o.enabled!==component.enabled)){
+     // A local override may differ from the user flag. Await a fresh project read.
+     next.enabled=null;next.state_note='Настройка изменена; состояние в этом проекте ожидает свежей сверки.';
+    }
+   }
    result.push(next);
   }
  }

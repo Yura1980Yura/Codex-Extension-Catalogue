@@ -75,8 +75,20 @@ class Controls:
         snapshot = deepcopy(snapshot)
         try: config = self.activation.configuration(self.home)
         except (OSError,ValueError): config = None
+        config_path = self.home/'.codex/config.toml'
+        changed_at = config_path.stat().st_mtime*1000 if config_path.exists() else 0
+        try: inventory = read(self.source/'inventory.json',{}).get('skills',{})
+        except (OSError,ValueError): inventory = {}
         for addon in snapshot.get('addons',[]):
             for component in addon.get('components',[]):
+                if component['kind']=='skill':
+                    observations = {}
+                    for observed in [*component.get('observations',[]),*inventory.get(component.get('skill_id'),{}).get('observations',[])]:
+                        key = (observed.get('kind'),str(observed.get('cwd','')).lower(),str(observed.get('path','')).lower())
+                        if observed.get('at','')>=observations.get(key,{}).get('at',''):
+                            observations[key] = observed
+                    component['observations'] = list(observations.values())
+                    component['config_changed_at'] = changed_at
                 for facts in component.get('contexts',{'all':component}).values():
                     control = self.descriptor(addon,component,facts,config) if config and not self.recovery_error else {'supported':False,'message':'Настройки или незавершённая запись истории требуют проверки. Переключение временно недоступно.'}
                     facts['control'] = {k:v for k,v in control.items() if k not in ('field','name','key')}

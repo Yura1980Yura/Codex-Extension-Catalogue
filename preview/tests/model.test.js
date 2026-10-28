@@ -7,11 +7,16 @@ const project={id:'game',path:'C:/projects/game'};
 const addon={id:'bundle',title:'Bundle',description:'',directions:[],tags:[],components:[global,local,{id:'m',kind:'mcp',scope:'global',installed:true,enabled:true}]};
 const data={projects:[project],addons:[addon],overlay:{items:{}}};
 
-test('fresh config wins over old skill discovery after a toggle',()=>{
- const x={...addon,components:[{...global,enabled:false,config_authoritative:true,observations:[{kind:'discovery',cwd:project.path,enabled:true}]}]};
- assert.equal(componentsFor(x,project)[0].enabled,false);
- assert.equal(visible({...data,addons:[x]},{project:'game',enabled:'off'}).length,1);
+test('old project discovery cannot contradict a freshly changed user flag',()=>{
+ const x={...addon,components:[{...global,enabled:false,config_authoritative:true,config_changed_at:2000,observations:[{kind:'discovery',cwd:project.path,enabled:true,at:'1970-01-01T00:00:01Z'}]}]};
+ assert.equal(componentsFor(x)[0].enabled,false);
+ assert.equal(componentsFor(x,project)[0].enabled,null);
  assert.equal(visible({...data,addons:[x]},{project:'game',enabled:'on'}).length,0);
+});
+test('fresh project discovery can override the user skill flag',()=>{
+ const x={...addon,components:[{...global,config_authoritative:true,config_changed_at:2000,observations:[{kind:'discovery',cwd:project.path,enabled:false,at:'1970-01-01T00:00:03Z'}]}]};
+ assert.equal(componentsFor(x)[0].enabled,true);
+ assert.equal(componentsFor(x,project)[0].enabled,false);
 });
 test('project inherits globals and gets its own local skill',()=>assert.equal(componentsFor(addon,project).length,3));
 test('another project cannot inherit unrelated local skill',()=>assert.equal(componentsFor(addon,{id:'other',path:'C:/projects/other'}).length,2));

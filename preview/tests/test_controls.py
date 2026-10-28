@@ -81,6 +81,17 @@ class Switches(unittest.TestCase):
             with self.assertRaises(Conflict):self.control.change(self.snapshot,self.payload())
     def test_public_state_contains_no_credentials(self):
         self.assertNotIn('DO_NOT_LEAK',json.dumps(self.control.decorate(self.snapshot)))
+    def test_fresh_skill_discovery_is_merged_without_losing_other_contexts(self):
+        part={'id':'skill','skill_id':'s','kind':'skill','installed':False,'observations':[
+            {'kind':'discovery','cwd':'game','path':'skill','at':'2026-10-28T01:00:00Z','enabled':True},
+            {'kind':'discovery','cwd':'other','path':'skill','at':'2026-10-28T01:00:00Z','enabled':True}]}
+        self.snapshot['addons'][0]['components']=[part]
+        self.control.storage.atomic_json(self.source/'inventory.json',{'skills':{'s':{'observations':[
+            {'kind':'discovery','cwd':'game','path':'skill','at':'2026-10-28T02:00:00Z','enabled':False}]}}})
+        observed=self.control.decorate(self.snapshot)['addons'][0]['components'][0]['observations']
+        self.assertEqual(len(observed),2)
+        self.assertFalse(next(o for o in observed if o['cwd']=='game')['enabled'])
+        self.assertTrue(next(o for o in observed if o['cwd']=='other')['enabled'])
     def test_confirmed_account_app_can_get_a_local_override(self):
         component=self.snapshot['addons'][0]['components'][2]
         component['id']='app:account_only';component['config_name']='account_only'

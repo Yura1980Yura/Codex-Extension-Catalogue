@@ -88,7 +88,7 @@ function controlHTML(c,explain=false){
  const control=c.control;
  if(!control?.supported)return explain?`<p class="tiny control-unavailable">${esc(control?.message||'Переключатель для этой части пока недоступен.')}</p>`:'';
  const name=c.title||c.name;
- return `<div class="control-row"><div><strong>${esc(name)}</strong><small>Глобально · на этом компьютере</small></div><button class="codex-switch" role="switch" aria-checked="${control.enabled}" aria-label="Использовать в Codex: ${esc(name)}" data-activation="${esc(c.id)}" data-context="${esc(c.contextId||filters.project||'all')}"><span class="switch-track" aria-hidden="true"></span><span>${control.enabled?'Включено':'Отключено'}</span></button></div>`;
+ return `<div class="control-row"><div><strong>${esc(name)}</strong><small>Глобально · на этом компьютере</small></div><button class="codex-switch" role="switch" aria-checked="${control.enabled}" aria-label="Использовать в Codex: ${esc(name)}" data-activation="${esc(c.id)}" data-context="${esc(c.contextId||filters.project||'all')}"><span class="switch-track" aria-hidden="true"></span><span>${control.enabled?'Включено':'Отключено'}</span></button></div>${c.state_note?`<p class="tiny">${esc(c.state_note)}</p>`:c.enabled!==null&&c.enabled!==control.enabled?`<p class="tiny">В этом проекте: ${c.enabled?'включено':'отключено'}. Его действующая настройка отличается от общей.</p>`:''}`;
 }
 function controlsHTML(parts){
  const available=parts.filter(c=>c.control?.supported);
