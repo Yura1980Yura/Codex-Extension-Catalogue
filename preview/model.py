@@ -74,7 +74,7 @@ def build(cards, views, resources, projects, installation_fn, overrides=None):
                 a['origin'] = a['profile'].get('origin', 'unknown')
             existing = next((x for x in a['components'] if x['id'] == c['id']), None)
             if existing is None:
-                existing = {'id': c['id'], 'kind': c['kind'], 'name': c['name'], 'contexts': {}, 'scope': 'unknown'}
+                existing = {'id': c['id'], 'kind': c['kind'], 'name': c['name'], 'config_name':c.get('server_name') or (c['id'].split(':',1)[1] if c['id'].startswith(c['kind']+':') else c['name']), 'contexts': {}, 'scope': 'unknown'}
                 a['components'].append(existing)
             existing['contexts'][context] = connection_facts({**c, 'checked_at': view.get('checked_at')})
     skill_groups = {}

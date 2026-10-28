@@ -27,7 +27,7 @@ export function componentsFor(addon,project=null){
    if(project&&component.scope==='local'&&!inside(project.path,component.project_path))continue;
    const next={...component};
    const observed=(component.observations||[]).filter(o=>o.kind==='discovery'&&project&&normal(o.cwd)===normal(project.path));
-   if(observed.length)next.enabled=observed.some(o=>o.enabled===true);
+   if(observed.length&&!component.config_authoritative)next.enabled=observed.some(o=>o.enabled===true);
    result.push(next);
   }
  }

@@ -28,10 +28,14 @@ class Isolation(unittest.TestCase):
         self.service.annotate({'id':'sample','action':'note','text':'first','revision':0})
         with self.assertRaises(ValueError):self.service.annotate({'id':'sample','action':'note','text':'second','revision':0})
         self.assertEqual(len(self.service.state()['overlay']['events']),1)
-    def test_codex_mutations_are_not_routed(self):
-        for path in ['/api/activation','/api/connections/meshy-key','/api/install']:
+    def test_unrelated_codex_mutations_are_not_routed(self):
+        for path in ['/api/connections/meshy-key','/api/install']:
             with self.assertRaises(urllib.error.HTTPError) as e:self.request(path,{'enabled':False})
             self.assertEqual(e.exception.code,403)
+    def test_activation_rejects_unknown_component_and_foreign_origin(self):
+        for headers,status in [({},400),({'Origin':'https://example.org'},403),({'X-Catalog-Token':'wrong'},403)]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/activation',{'id':'unknown','component_id':'bad','enabled':False,'revision':'x'},headers)
+            self.assertEqual(error.exception.code,status)
     def test_foreign_origin_is_rejected(self):
         with self.assertRaises(urllib.error.HTTPError) as e:self.request('/api/state',headers={'Origin':'https://example.org'})
         self.assertEqual(e.exception.code,403)

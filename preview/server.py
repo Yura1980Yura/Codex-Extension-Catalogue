@@ -7,6 +7,7 @@ import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import socket
@@ -18,9 +19,18 @@ from urllib.parse import urlsplit, parse_qs
 import webbrowser
 
 from collect import collect, read, ROOT, runtime_path
+from controls import Controls, ControlError, Conflict
 
 APP = 'codex-catalog-overview-preview'
 WEB = Path(__file__).parent/'web'
+
+def build_id():
+    digest = hashlib.sha256()
+    for path in sorted(Path(__file__).parent.rglob('*')):
+        if path.is_file() and path.suffix in ('.py', '.js', '.css', '.html', '.json') and not any(p in path.parts for p in ('node_modules', '__pycache__', 'tests')):
+            digest.update(path.relative_to(WEB.parent).as_posix().encode())
+            digest.update(path.read_bytes())
+    return digest.hexdigest()[:20]
 
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -39,6 +49,7 @@ class Preview:
         self.job = {'state': 'idle'}
         self.watch_state = {'local_seconds': 15, 'account_minutes': 5, 'enabled': False}
         self.stop_watch = threading.Event()
+        self.controls = Controls(settings,self.work)
 
     def start_watch(self):
         from watch import signature
@@ -127,7 +138,11 @@ class Preview:
             return {'loading': True, 'job': self.job}
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
-        return {**snapshot, 'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
+        return {**self.controls.decorate(snapshot), 'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
+
+    def activation(self, payload):
+        result = self.controls.change(read(self.work/'snapshot.json',{}),payload)
+        return {'result':result,'state':self.state()}
 
     def refresh(self):
         if not self.refresh_lock.acquire(blocking=False):
@@ -180,6 +195,9 @@ class Preview:
 
 def make_server(service, port):
     token = secrets.token_urlsafe(32)
+    # One process serves one immutable frontend build, even while sources are updated.
+    assets = {p.relative_to(WEB).as_posix(): p.read_bytes() for p in WEB.rglob('*') if p.is_file()}
+    build = build_id()
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_): pass
         def send(self, value, status=200, kind='application/json; charset=utf-8'):
@@ -207,27 +225,30 @@ def make_server(service, port):
                 if parsed.path == '/api/open-project': return self.send(service.open_project(payload))
                 if parsed.path == '/api/legacy': return self.send(service.open_legacy())
                 if parsed.path == '/api/order': return self.send(service.reorder(payload))
+                if parsed.path == '/api/activation': return self.send(service.activation(payload))
                 if parsed.path == '/api/shutdown':
                     self.send({'stopped': True})
                     service.stop_watch.set()
                     threading.Thread(target=self.server.shutdown, daemon=True).start()
                     return
                 if parsed.path == '/api/annotate': return self.send(service.annotate(payload))
-                return self.send({'error': 'Изменение рабочего Codex в пробной версии недоступно.'}, 403)
-            if parsed.path == '/api/health': return self.send({'app': APP, 'pid': os.getpid(), 'data': str(service.work)})
+                return self.send({'error': 'Это действие не поддерживается каталогом.'}, 403)
+            if parsed.path == '/api/health': return self.send({'app': APP, 'pid': os.getpid(), 'data': str(service.work), 'build': build})
             if parsed.path == '/api/state': return self.send(service.state())
             if parsed.path == '/api/instruction':
                 key = parse_qs(parsed.query).get('id', [''])[0]
                 value = read(service.work/'instructions.json', {}).get(key)
                 return self.send(value or {'error': 'Инструкция не подтверждена в текущей установке.'}, 200 if value else 404)
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/model.js': ('model.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/icon.svg': ('icon.svg', 'image/svg+xml')}
-            files.update({'/'+name: (name, 'text/javascript') for name in ('markdown.js', 'vendor/marked.js', 'vendor/purify.js')})
+            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'markdown.js', 'vendor/marked.js', 'vendor/purify.js')})
             if parsed.path not in files: return self.send({'error': 'Страница не найдена.'}, 404)
             name, mime = files[parsed.path]
-            raw = (WEB/name).read_bytes().replace(b'__TOKEN__', token.encode()) if name == 'index.html' else (WEB/name).read_bytes()
+            raw = assets[name].replace(b'__TOKEN__', token.encode()) if name == 'index.html' else assets[name]
             return self.send(raw, kind=mime+'; charset=utf-8')
         def handle_route(self, post=False):
             try: self.route(post)
+            except Conflict as error: self.send({'error':str(error)},409)
+            except ControlError as error: self.send({'error':str(error)},400)
             except (ValueError, TypeError, KeyError): self.send({'error': 'Не удалось сохранить. Проверьте поля или обновите сведения; текст остался в форме.'}, 400)
             except OSError: self.send({'error': 'Файл сейчас недоступен. Предыдущие записи сохранены.'}, 503)
             except subprocess.SubprocessError: self.send({'error': 'Прежний каталог не запустился. Его файлы сохранены.'}, 503)
@@ -242,6 +263,46 @@ def make_server(service, port):
             super().server_bind()
     return LocalServer(('127.0.0.1', port), Handler)
 
+def connect_or_upgrade(service, port):
+    """Reuse the same build, or gracefully replace our own older server."""
+    import urllib.request
+    try:
+        return make_server(service, port)
+    except OSError as occupied:
+        url = f'http://127.0.0.1:{port}'
+        try:
+            health = json.load(urllib.request.urlopen(url+'/api/health', timeout=3))
+            if health.get('app') != APP or health.get('data') != str(service.work):
+                raise ValueError('Адрес занят другой программой. Каталог не создаёт вторую копию на случайном адресе.')
+            if health.get('build') == build_id(): return None
+            html = urllib.request.urlopen(url, timeout=3).read().decode()
+            token = re.search('name="catalog-token" content="([^"]+)"', html)[1]
+            request = urllib.request.Request(url+'/api/shutdown', data=b'{}', headers={'Content-Type':'application/json','X-Catalog-Token':token})
+            urllib.request.urlopen(request, timeout=5).close()
+        except (OSError, ValueError, TypeError) as error:
+            raise RuntimeError('Не удалось обновить запущенный каталог. Закройте его прежний сервер и запустите ярлык снова.') from error
+        deadline = time.monotonic()+6
+        while time.monotonic() < deadline:
+            try: return make_server(service, port)
+            except OSError: time.sleep(.15)
+        raise RuntimeError('Прежний сервер ещё завершает работу. Повторите запуск каталога.') from occupied
+
+def old_address_redirect(port, destination):
+    """Preserve the addresses used by earlier previews; fragments survive redirects."""
+    class Redirect(BaseHTTPRequestHandler):
+        def log_message(self, *_): pass
+        def do_GET(self):
+            if self.headers.get('Host') != f'127.0.0.1:{port}':
+                self.send_error(403); return
+            self.send_response(302)
+            self.send_header('Location', destination+'/')
+            self.send_header('Cache-Control','no-store')
+            self.send_header('Content-Length','0')
+            self.end_headers()
+    server = ThreadingHTTPServer(('127.0.0.1',port),Redirect)
+    threading.Thread(target=server.serve_forever,daemon=True).start()
+    return server
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--settings', type=Path, default=ROOT/'.local/catalog-current/settings.json')
@@ -250,26 +311,32 @@ def main():
     parser.add_argument('--open', action='store_true')
     args = parser.parse_args()
     service = Preview(read(args.settings, {}), args.work.resolve())
-    try:
-        server = make_server(service, args.port)
-    except OSError:
-        import urllib.request
-        try:
-            url = f'http://127.0.0.1:{args.port}'
-            health = json.load(urllib.request.urlopen(url+'/api/health', timeout=2))
-            if health.get('app') == APP and health.get('data') == str(service.work):
-                if args.open: webbrowser.open(url)
-                return
-        except (OSError, ValueError): pass
-        server = make_server(service, 0)
+    server = connect_or_upgrade(service, args.port)
+    if server is None:
+        if args.open: webbrowser.open(f'http://127.0.0.1:{args.port}')
+        return
     url = f'http://127.0.0.1:{server.server_port}'
     write(service.work/'server.json', {'app': APP, 'url': url, 'pid': os.getpid()})
+    redirects = []
+    if args.port == 8772:
+        for old in (8770,8771):
+            deadline = time.monotonic()+3
+            while True:
+                try:
+                    redirects.append(old_address_redirect(old,url)); break
+                except OSError:
+                    if time.monotonic()>=deadline:
+                        print(f'Прежний адрес {old} занят; актуальный каталог: {url}',file=sys.stderr); break
+                    time.sleep(.15)
+    service.controls.recover()
     service.start_watch()
     if args.open: webbrowser.open(url)
     print(url, flush=True)
     try: server.serve_forever()
     finally:
         service.stop_watch.set()
+        for redirect in redirects:
+            redirect.shutdown(); redirect.server_close()
         server.server_close()
 
 if __name__ == '__main__': main()

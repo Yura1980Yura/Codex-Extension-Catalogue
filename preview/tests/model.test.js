@@ -6,6 +6,13 @@ const local={id:'s2',kind:'skill',scope:'local',project_path:'C:/projects/game',
 const project={id:'game',path:'C:/projects/game'};
 const addon={id:'bundle',title:'Bundle',description:'',directions:[],tags:[],components:[global,local,{id:'m',kind:'mcp',scope:'global',installed:true,enabled:true}]};
 const data={projects:[project],addons:[addon],overlay:{items:{}}};
+
+test('fresh config wins over old skill discovery after a toggle',()=>{
+ const x={...addon,components:[{...global,enabled:false,config_authoritative:true,observations:[{kind:'discovery',cwd:project.path,enabled:true}]}]};
+ assert.equal(componentsFor(x,project)[0].enabled,false);
+ assert.equal(visible({...data,addons:[x]},{project:'game',enabled:'off'}).length,1);
+ assert.equal(visible({...data,addons:[x]},{project:'game',enabled:'on'}).length,0);
+});
 test('project inherits globals and gets its own local skill',()=>assert.equal(componentsFor(addon,project).length,3));
 test('another project cannot inherit unrelated local skill',()=>assert.equal(componentsFor(addon,{id:'other',path:'C:/projects/other'}).length,2));
 test('sibling prefix is not a descendant',()=>assert.equal(componentsFor(addon,{id:'other',path:'C:/projects/game2'}).length,2));
