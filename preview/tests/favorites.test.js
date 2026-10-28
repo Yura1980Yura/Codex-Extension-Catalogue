@@ -27,7 +27,7 @@ function fixture(t,{hash='#all',stored='false'}={}){
  const context={...model,window:dom.window,document:dom.window.document,location:dom.window.location,
   history:dom.window.history,localStorage:dom.window.localStorage,URLSearchParams,URL,AbortSignal,
   setTimeout:dom.window.setTimeout.bind(dom.window),clearTimeout:dom.window.clearTimeout.bind(dom.window),
-  matchMedia:()=>({matches:false}),selectSettingsProject(){},
+  matchMedia:()=>({matches:false}),selectSettingsProject(){},renderGuide(){},
   fetch:async(url,options)=>{
    const body=JSON.parse(options.body);requests.push({url,body});
    assert.equal(url,'/api/annotate');assert.equal(body.action,'favorite');

@@ -19,6 +19,7 @@ from urllib.parse import urlsplit, parse_qs
 import webbrowser
 
 from collect import collect, read, ROOT, runtime_path
+from backlog import Backlog, BacklogError
 from controls import Controls, ControlError, Conflict
 from folder_window import open_folder
 from project_folders import folder_key, file_folder, decorate_projects
@@ -56,6 +57,7 @@ class Preview:
         self.stop_watch = threading.Event()
         self.controls = Controls(settings,self.work)
         self.skill_files = SkillFiles(settings, self.work)
+        self.backlog = Backlog(settings, self.work)
 
     def start_watch(self):
         # Kept as a compatibility hook. Discovery is explicitly user-triggered.
@@ -240,7 +242,7 @@ class Preview:
         if key not in ids and key != 'workspace':
             raise ValueError('Надстройка не найдена. Обновите страницу.')
         action = payload.get('action')
-        if action not in ('note', 'favorite', 'tags', 'wish'):
+        if action not in ('note', 'favorite', 'tags'):
             raise ValueError('Действие не поддерживается в пробном варианте.')
         with self.lock:
             data = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
@@ -293,6 +295,7 @@ def make_server(service, port):
                     raise ValueError('Неверный формат запроса.')
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict): raise ValueError('Неверный запрос.')
+                if parsed.path == '/api/backlog': return self.send(service.backlog.handle(payload))
                 if parsed.path == '/api/refresh': return self.send(service.refresh(), 202)
                 if parsed.path == '/api/project': return self.send(service.add_project(payload), 202)
                 if parsed.path == '/api/open-project': return self.send(service.open_project(payload))
@@ -318,13 +321,14 @@ def make_server(service, port):
                 value = read(service.work/'instructions.json', {}).get(key)
                 return self.send(value or {'error': 'Инструкция не подтверждена в текущей установке.'}, 200 if value else 404)
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/model.js': ('model.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/icon.svg': ('icon.svg', 'image/svg+xml')}
-            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'state.js', 'skill-actions.js', 'reconciliation.js', 'vendor/marked.js', 'vendor/purify.js')})
+            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'state.js', 'skill-actions.js', 'reconciliation.js', 'guide.js', 'backlog.js', 'vendor/marked.js', 'vendor/purify.js')})
             if parsed.path not in files: return self.send({'error': 'Страница не найдена.'}, 404)
             name, mime = files[parsed.path]
             raw = assets[name].replace(b'__TOKEN__', token.encode()) if name == 'index.html' else assets[name]
             return self.send(raw, kind=mime+'; charset=utf-8')
         def handle_route(self, post=False):
             try: self.route(post)
+            except BacklogError as error: self.send({'error': str(error)}, 400)
             except Conflict as error: self.send({'error':str(error)},409)
             except ControlError as error: self.send({'error':str(error)},400)
             except SettingsError as error: self.send({'error':str(error)},400)
