@@ -20,6 +20,8 @@ import webbrowser
 
 from collect import collect, read, ROOT, runtime_path
 from controls import Controls, ControlError, Conflict
+from folder_window import open_folder
+from project_folders import folder_key, file_folder, decorate_projects
 
 APP = 'codex-catalog-overview-preview'
 WEB = Path(__file__).parent/'web'
@@ -27,7 +29,7 @@ WEB = Path(__file__).parent/'web'
 def build_id():
     digest = hashlib.sha256()
     for path in sorted(Path(__file__).parent.rglob('*')):
-        if path.is_file() and path.suffix in ('.py', '.js', '.css', '.html', '.json') and not any(p in path.parts for p in ('node_modules', '__pycache__', 'tests')):
+        if path.is_file() and path.suffix in ('.py', '.ps1', '.js', '.css', '.html', '.json') and not any(p in path.parts for p in ('node_modules', '__pycache__', 'tests')):
             digest.update(path.relative_to(WEB.parent).as_posix().encode())
             digest.update(path.read_bytes())
     return digest.hexdigest()[:20]
@@ -70,13 +72,47 @@ class Preview:
 
     def open_project(self, payload):
         project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)
-        if not project or not Path(project['path']).is_dir():
-            raise ValueError('Папка проекта не найдена.')
-        # Open Explorer explicitly: the folder association can acknowledge the
-        # request without displaying a window when launched by a hidden server.
-        explorer = str(Path(os.environ.get('WINDIR', r'C:\Windows'))/'explorer.exe')
-        os.startfile(explorer, arguments=subprocess.list2cmdline([str(Path(project['path']).resolve())]), show_cmd=1)
-        return {'opened': True}
+        if not project:
+            raise ValueError('Проект не найден. Обновите каталог.')
+        with self.lock:
+            overlay = read(self.work/'annotations.json', {})
+            path = Path(file_folder(project, overlay))
+        if not path.is_dir():
+            raise ValueError('Папка файлов не найдена. Укажите её через «Изменить папку».')
+        result = open_folder(path.resolve())
+        write(self.work/'last-folder-open.json', {**result, 'project_id': project['id'], 'at': datetime.now(timezone.utc).isoformat()})
+        return {'opened': True, 'foreground': True}
+
+    def set_project_folder(self, payload):
+        project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)
+        if not project or 'path' not in payload:
+            raise ValueError('Укажите проект и папку файлов.')
+        raw = payload['path']
+        if raw is not None:
+            if not isinstance(raw, str) or not raw.strip():
+                raise ValueError('Укажите существующую папку абсолютным путём.')
+            path = Path(raw.strip())
+            if not path.is_absolute() or not path.is_dir():
+                raise ValueError('Укажите существующую папку абсолютным путём.')
+            raw = str(path.resolve())
+        with self.lock:
+            overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
+            if payload.get('revision') != overlay['revision']:
+                raise ValueError('Настройки изменились в другом окне. Обновите каталог и повторите сохранение.')
+            folders = overlay.setdefault('project_folders', {})
+            key = folder_key(project)
+            old = folders.get(key)
+            if (raw is None and old) or (raw is not None and (not old or old['path'] != raw)):
+                before = file_folder(project, overlay)
+                if raw is None:
+                    folders.pop(key)
+                else:
+                    folders[key] = {'path': raw, 'at': datetime.now(timezone.utc).isoformat()}
+                self.event(overlay, 'project_folder', project['id'],
+                    {'project': project['name'], 'before': before, 'after': file_folder(project, overlay),
+                     'source': 'user' if raw else project.get('source', 'catalog')})
+                write(self.work/'annotations.json', overlay)
+        return self.state()
 
     def open_legacy(self):
         entry = runtime_path(self.settings)/'manager/launch.py'
@@ -141,7 +177,8 @@ class Preview:
             return {'loading': True, 'job': self.job}
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
-        return {**self.controls.decorate(snapshot), 'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
+        return {**self.controls.decorate(snapshot), 'projects': decorate_projects(snapshot.get('projects', []), overlay),
+                'overlay': overlay, 'job': self.job, 'watch': self.watch_state}
 
     def activation(self, payload):
         result = self.controls.change(read(self.work/'snapshot.json',{}),payload)
@@ -226,6 +263,7 @@ def make_server(service, port):
                 if parsed.path == '/api/refresh': return self.send(service.refresh(), 202)
                 if parsed.path == '/api/project': return self.send(service.add_project(payload), 202)
                 if parsed.path == '/api/open-project': return self.send(service.open_project(payload))
+                if parsed.path == '/api/project-folder': return self.send(service.set_project_folder(payload))
                 if parsed.path == '/api/legacy': return self.send(service.open_legacy())
                 if parsed.path == '/api/order': return self.send(service.reorder(payload))
                 if parsed.path == '/api/activation': return self.send(service.activation(payload))
