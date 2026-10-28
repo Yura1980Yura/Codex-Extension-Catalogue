@@ -49,6 +49,7 @@ h3{font-size:16px;font-weight:650}
 .page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
 .page-heading p{color:var(--muted);margin-bottom:18px;max-width:72ch}
 .page-heading .scope-label{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;white-space:nowrap;background:white;margin-top:4px}
+.page-heading button.scope-label:hover{background:var(--accent-soft);border-color:#8aa699}
 .overview-line{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin:2px 0 25px;color:var(--muted);font-size:13px}
 .overview-line strong{font-weight:600;color:var(--ink)}
 .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px}
