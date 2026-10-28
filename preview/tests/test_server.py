@@ -1,5 +1,6 @@
 from pathlib import Path
 import json, sys, tempfile, threading, unittest, urllib.request, urllib.error
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from server import Preview, make_server, write
 
@@ -24,6 +25,20 @@ class Isolation(unittest.TestCase):
         with self.request('/api/annotate',{'id':'sample','action':'note','text':'Проверено','revision':0}) as r:self.assertEqual(json.load(r)['revision'],1)
         self.assertEqual((self.root/'snapshot.json').read_bytes(),original)
         self.assertEqual(json.loads((self.root/'annotations.json').read_text('utf-8'))['items']['sample']['notes'][0]['text'],'Проверено')
+    def test_refresh_finishing_during_response_keeps_polling_until_new_snapshot(self):
+        write(self.root/'snapshot.json', {'addons': [], 'version': 'old'})
+        self.service.job = {'state': 'running'}
+        def finish_refresh(snapshot):
+            write(self.root/'snapshot.json', {'addons': [], 'version': 'new'})
+            self.service.job = {'state': 'done'}
+            return snapshot
+        with patch.object(self.service.controls, 'decorate', side_effect=finish_refresh):
+            response = self.service.state()
+        self.assertEqual(response['version'], 'old')
+        self.assertEqual(response['job']['state'], 'running')
+        next_response = self.service.state()
+        self.assertEqual(next_response['version'], 'new')
+        self.assertEqual(next_response['job']['state'], 'done')
     def test_conflicting_write_does_not_overwrite_note(self):
         self.service.annotate({'id':'sample','action':'note','text':'first','revision':0})
         with self.assertRaises(ValueError):self.service.annotate({'id':'sample','action':'note','text':'second','revision':0})

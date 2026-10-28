@@ -161,15 +161,18 @@ class Preview:
         data['revision'] += 1
 
     def state(self):
+        # Capture before the snapshot: refresh may finish while we decorate it.
+        # An older snapshot must keep polling instead of reporting completion.
+        job = dict(self.job)
         snapshot = read(self.work/'snapshot.json')
         if snapshot is None:
-            return {'loading': True, 'job': self.job}
+            return {'loading': True, 'job': job}
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
         decorated = self.skill_files.decorate(self.controls.decorate(snapshot))
         return {**decorated, 'projects': decorate_projects(snapshot.get('projects', []), overlay),
                 'source_settings':settings_view(self.settings,snapshot.get('projects', []),overlay,snapshot),
-                'overlay': overlay, 'job': self.job, 'watch': self.watch_state,
+                'overlay': overlay, 'job': job, 'watch': self.watch_state,
                 'removed_skills':self.skill_files.removed()}
 
     def skill_plan(self, payload):
@@ -315,7 +318,7 @@ def make_server(service, port):
                 value = read(service.work/'instructions.json', {}).get(key)
                 return self.send(value or {'error': 'Инструкция не подтверждена в текущей установке.'}, 200 if value else 404)
             files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'), '/model.js': ('model.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'), '/icon.svg': ('icon.svg', 'image/svg+xml')}
-            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'state.js', 'skill-actions.js', 'vendor/marked.js', 'vendor/purify.js')})
+            files.update({'/'+name: (name, 'text/javascript') for name in ('bootstrap.js', 'dialog.js', 'markdown.js', 'settings.js', 'state.js', 'skill-actions.js', 'reconciliation.js', 'vendor/marked.js', 'vendor/purify.js')})
             if parsed.path not in files: return self.send({'error': 'Страница не найдена.'}, 404)
             name, mime = files[parsed.path]
             raw = assets[name].replace(b'__TOKEN__', token.encode()) if name == 'index.html' else assets[name]

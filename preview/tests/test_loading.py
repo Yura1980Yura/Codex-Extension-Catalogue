@@ -22,7 +22,7 @@ class Loading(unittest.TestCase):
             for name in re.findall(r"(?:from\s*|import\s*\()\s*['\"](\./[^'\"]+)",source):
                 from posixpath import dirname, normpath
                 queue.append(normpath(dirname(path).rstrip('/')+'/'+name))
-        self.assertTrue({'/app.js','/markdown.js','/vendor/marked.js','/vendor/purify.js'} <= seen)
+        self.assertTrue({'/app.js','/markdown.js','/reconciliation.js','/vendor/marked.js','/vendor/purify.js'} <= seen)
 
     def test_running_server_keeps_its_frontend_and_build(self):
         before=self.request('/app.js').read()

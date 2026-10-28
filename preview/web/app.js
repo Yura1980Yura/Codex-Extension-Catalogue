@@ -1,5 +1,6 @@
 import {renderSettings,selectSettingsProject} from './settings.js';
 import {contentKey,pollDelay,preserveView} from './state.js';
+import {reconciliationHTML as renderReconciliation} from './reconciliation.js';
 import {skillFileTools,bindSkillFileTools,removedSkillsHTML} from './skill-actions.js';
 import {markdown} from './markdown.js';
 import {showDialog as openNativeDialog,closeDialog as closeNativeDialog,clearDialogMotion} from './dialog.js';
@@ -306,7 +307,7 @@ function bindOrdering(rows){
   card.ondrop=e=>{e.preventDefault();const moving=dragged;if(moving&&moving!==card.dataset.addon)persistOrder(reorderIds(fullOrder(rows),moving,card.dataset.addon),moving);card.classList.remove('drop-target');dragged=null;};
  });
 }
-function reconciliationHTML(){const r=data.coverage.reconciliation;if(!r)return '';return `<section class="soft-note ${r.complete?'':'amber'}"><strong>${r.complete?'Сопоставление пройдено':'Есть расхождения для проверки'}</strong><p>${r.skill_paths} файлов навыков · ${r.session_skills} навыков из списка чата · ${r.connections} подключений · ${r.project_contexts} папок проектов.</p><p>Пропуски: ${r.missing_skill_paths.length+r.missing_connections.length+r.missing_session_paths.length}. Повторяющиеся части: ${r.duplicate_component_ids.length}.</p><p>${esc(r.limits)}</p></section>`;}
+function reconciliationHTML(){return renderReconciliation(data.coverage.reconciliation,esc);}
 function projectFolderSettings(p){
  const manual=p.file_path_source==='user';
  readPanel('Папка проекта · '+p.name,`<p>«Открыть папку» перейдёт сюда в Проводнике. Каталог также проверит здесь локальные навыки.</p><form class="note-form" id="folder-settings-form"><label for="file-folder-path">Папка файлов</label><input id="file-folder-path" required value="${esc(p.file_path||p.path)}" placeholder="C:\\Projects\\MyProject" autocomplete="off" spellcheck="false"><p class="tiny">${manual?'Указана вами. Автоматическое обновление её не заменит.':p.source==='codex'?'Взята из записи проекта Codex. Проверьте, действительно ли здесь ваши файлы.':'Взята из настроек каталога.'}</p><div class="project-actions"><button class="primary" type="submit">Сохранить</button>${manual?`<button class="quiet" type="button" id="reset-file-folder">Вернуть исходную папку</button>`:''}</div><p class="error" role="alert"></p></form><p class="tiny folder-context">Исходная запись проекта Codex остаётся прежней. Сравнивайте её с выбранной папкой; открытый чат автоматически не переносится:<br><code>${esc(p.path)}</code></p>`);
