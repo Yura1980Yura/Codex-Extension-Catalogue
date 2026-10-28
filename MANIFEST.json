@@ -1,5 +1,5 @@
 {
-  "bundle_id": "68b1680c5af75d93576561dad911227d57ad3a52a175c5fe5a213e998a5b071f",
+  "bundle_id": "81a166aae1ecc0692e70f411d3c838d417a9cff4f19965e0bc581ac2f519c3ff",
   "date": "2026-10-28",
   "source_revision": "v3.0.0",
   "files": {
@@ -69,7 +69,7 @@
     "notes-template/Менеджер навыков.md": "51d904767aca8a9b753691fd9d737574791f52e45b851f280acf533e260ae414",
     "preview/audit.py": "b32af2f72b5c4e1a2aaf508db666801d2c24d2e9e6addb06b2271a7717885004",
     "preview/collect.py": "5c4e4aff32711dd2be54f7c6f4daedd443b95e5788b0be4b2edd0d7e30f490de",
-    "preview/composition.json": "0c34c83cba4bbbd334a1f69146f81b5dbaf73c034f21bc0d64bd993c6786c73b",
+    "preview/composition.json": "c016a53ffe778d9146e13a185dbfbba7685d99f1594c240b7a1f73bfa50f500b",
     "preview/model.py": "e9985baa95f603825418e872d44b098f88e005cab68ddb031b4b6c2d1389c1b3",
     "preview/package-lock.json": "b08b3189452e6bc65a86584daca678a3f2d44d90c851904ffe31e35e21962039",
     "preview/package.json": "b2d3e995af90ff07c493d4223fc85e5adf6ba26510c9ea0fd02765ee75a0d11e",
