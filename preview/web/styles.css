@@ -111,12 +111,10 @@ footer button{font-size:12px!important;min-height:32px!important;padding:0 5px!i
 }
 
 dialog{border:0;box-shadow:-12px 0 60px #18302620;color:var(--ink);padding:0;background:white}
-dialog::backdrop{background:#16332938;backdrop-filter:blur(1px)}
+dialog::backdrop{background:transparent}
 #details{margin:0 0 0 auto;width:min(620px,100%);height:100dvh;max-height:100dvh;max-width:100%;border-radius:16px 0 0 16px;overflow:auto}
-#details[open]{animation:reveal 220ms var(--ease-drawer)}
-@keyframes reveal{from{transform:translateX(48px);opacity:.5}
-to{transform:translateX(0);opacity:1}
-}
+#details{transform:translateX(0);transition:transform 220ms var(--ease-drawer)}
+#details.entering,#details.closing{transform:translateX(100%)}
 .drawer-head{position:sticky;top:0;background:#fffffff5;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:15px 24px;z-index:2;font-size:13px;color:var(--muted)}
 .drawer-body{padding:25px 28px 36px}
 .drawer-title{display:flex;align-items:flex-start;gap:14px}
@@ -363,22 +361,13 @@ footer{padding:10px 17px 24px;flex-direction:column;gap:4px}
 .addon.drop-target{outline:2px solid #458b72;outline-offset:3px}
 .order-up,.order-down{opacity:.6}
 
-#sidebar-shade{position:fixed;inset:0;background:#102e2866;border:0;z-index:19}
+#sidebar-shade{position:fixed;inset:0;background:transparent;border:0;z-index:19}
 #sidebar-shade[hidden]{display:none}
 
-#reader[open]{animation:reader-in 180ms var(--ease-out)}
-@keyframes reader-in{from{opacity:0;transform:translateY(12px)}
-to{opacity:1;transform:translateY(0)}
-}
+#reader{opacity:1;transform:translateY(0);transition:opacity 200ms var(--ease-out),transform 200ms var(--ease-out)}
+#reader.entering,#reader.closing{opacity:0;transform:translateY(12px)}
 
-#details.closing{animation:drawer-out 180ms var(--ease-drawer) forwards}
-#reader.closing{animation:reader-out 180ms var(--ease-out) forwards}
-@keyframes drawer-out{to{opacity:0;transform:translateX(48px)}
-}
-@keyframes reader-out{to{opacity:0;transform:translateY(10px)}
-}
-
-dialog.no-motion{animation:none!important}
+dialog.no-motion{animation:none!important;transition:none!important}
 #sidebar.no-motion{transition:none!important}
 
 @media(hover:hover) and (prefers-reduced-motion:no-preference){.addon{transition:border-color 150ms var(--ease-out),box-shadow 150ms var(--ease-out)}

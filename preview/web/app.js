@@ -1,4 +1,5 @@
 import {markdown} from './markdown.js';
+import {showDialog as openNativeDialog,closeDialog as closeNativeDialog,clearDialogMotion} from './dialog.js';
 import {typeNames,scopeNames,origins,componentsFor,presence,status,visible,values,reorderIds} from './model.js';
 const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={all:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z',skill:'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5',mcp:'M8 8v8m8-8v8M8 12h8M4 5h4v3H4zM16 5h4v3h-4zM4 16h4v3H4zM16 16h4v3h-4z',plugin:'M4 4h6v4a3 3 0 0 0 6 0V4h4v16h-4v-4a3 3 0 0 0-6 0v4H4z',app:'M4 4h16v16H4zM4 9h16M8 4v5',program:'M3 4h18v13H3zM8 21h8m-4-4v4',star:'m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z',notes:'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5',history:'M4 5v5h5M4 10a8 8 0 1 1 .3 5M12 7v5l3 2',globe:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18',folder:'M3 6h7l2 2h9v12H3z',refresh:'M20 7v5h-5M4 17v-5h5M20 12a8 8 0 0 0-14-5M4 12a8 8 0 0 0 14 5',info:'M12 11v6m0-10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',filter:'M4 6h16M7 12h10M10 18h4',close:'m6 6 12 12M18 6 6 18',chevron:'m9 5 7 7-7 7',copy:'M9 9h11v11H9zM5 15H3V3h12v2'};
@@ -217,18 +218,15 @@ function bindInstructionActions(){
  });
  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyInvocation(b.dataset.copy));
 }
-function showDialog(dialog){dialog.classList.toggle('no-motion',lastInput==='keyboard');dialog.classList.remove('closing');dialog.showModal();}
-function closeDialog(dialog){
- if(!dialog.open||dialog.classList.contains('closing'))return;
- if(lastInput==='keyboard'||matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.close();return;}
- dialog.classList.add('closing');setTimeout(()=>{dialog.close();dialog.classList.remove('closing');},180);
-}
+const immediateDialog=()=>lastInput==='keyboard'||matchMedia('(prefers-reduced-motion: reduce)').matches;
+function showDialog(dialog){openNativeDialog(dialog,immediateDialog());}
+function closeDialog(dialog){return closeNativeDialog(dialog,immediateDialog());}
 for(const dialog of document.querySelectorAll('dialog')){
  let backdropDown=false;
  const outside=e=>{const r=dialog.getBoundingClientRect();return e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom;};
  dialog.addEventListener('pointerdown',e=>backdropDown=e.target===dialog&&outside(e));
  dialog.addEventListener('click',e=>{if(backdropDown&&e.target===dialog&&outside(e))closeDialog(dialog);backdropDown=false;});
- dialog.addEventListener('close',()=>{if(pendingRender&&!document.querySelector('dialog[open]')){pendingRender=false;renderPage();}});
+ dialog.addEventListener('close',()=>{clearDialogMotion(dialog);if(pendingRender&&!document.querySelector('dialog[open]')){pendingRender=false;renderPage();}});
 }
 function setMenu(open){$('#sidebar').classList.toggle('no-motion',lastInput==='keyboard');$('#sidebar').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',open);$('#sidebar-shade').hidden=!open;$('.workspace').inert=open&&matchMedia('(max-width:760px)').matches;if(open&&lastInput==='keyboard')$('#navigation a').focus();}
 window.addEventListener('resize',()=>{if(innerWidth>760&&$('#sidebar').classList.contains('open'))setMenu(false);});
