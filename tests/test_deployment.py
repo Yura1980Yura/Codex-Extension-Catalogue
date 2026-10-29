@@ -77,6 +77,7 @@ class Deployment(unittest.TestCase):
         self.assertIn("'\"'\"'",(mac/'Contents/MacOS/launch').read_text())
         linux=Path(d.shortcut(runtime,self.home/'linux','linux'))
         self.assertIn('Type=Application',linux.read_text());self.assertIn('Terminal=false',linux.read_text())
+        self.assertIn(r'\\$literal',linux.read_text())
         with self.assertRaises(ValueError):d.shortcut(runtime,self.home/'linux','linux')
 
     def test_archive_manifest_rejects_added_file(self):

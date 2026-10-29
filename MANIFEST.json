@@ -1,5 +1,5 @@
 {
-  "bundle_id": "dfc2baea8ab0d4a72877237b8a74b5ba8ac989ea9d2d1107915ec19b9e125fb8",
+  "bundle_id": "d3ec6211d83f2ee730c6ed02324410aef212c7b4c6c87d42e29c84d5a896d791",
   "date": "2026-10-29",
   "source_revision": "v3.6.0",
   "files": {
@@ -65,7 +65,7 @@
     "assets/asemic.png": "d0196d8fc9a52d04fb813b61299262782f370ff5e6a515f2fa141e59082301d7",
     "assets/asemic.svg": "dddb6b31821dcc00627261991e3a7408dfb8f215d188b2ffb9acdc6be288fd25",
     "CHANGELOG.md": "6a70f52e2220404716adaea81e84ff2882b5a599b077a769c5c8babd69a7bc63",
-    "deployment.py": "d680cffe4139be51545469f4a1ba77add078833889213a327d230dfb06dd630c",
+    "deployment.py": "094f24fe3aa822d1050b23658582e91ef3bd69d756ae0e9298e7a45a6bf1922e",
     "docs/legacy-v2/1-Начните-здесь.txt": "c95348c9d8cd13bbfa6a9c4e11f18a799ab54e0ae41bb30f0be5c3dd8bc052d6",
     "docs/legacy-v2/2-Промпт-для-Codex.txt": "9aac27c575c1c300d8f6f18fdd943f7c9ec555b0d0cf68e68113c932a259a658",
     "docs/legacy-v2/3-Возможности-и-ограничения.md": "5ad59d54c7daacef69079da06c5113a05bceb9a3881f506cde890a96d4751924",
@@ -153,7 +153,7 @@
     "START-CODEX.txt": "ba50c93dae80c5b7890f4210015714de136903b41ea0dc4dde717bf06ee0fb70",
     "tests/test_connection_state.py": "1ea47586d59230dcebb300ccea9d88d4c2c854a3eaf652caf01b82d42eb4802a",
     "tests/test_connections.py": "dc07ab2ff0ce7c222eea77dbcfeceffb35816f049cefb637f09850c8261b9250",
-    "tests/test_deployment.py": "a3d3e112e3111eca16ed5db223307acb28bb757e4a1a028c3773260c286a7c29",
+    "tests/test_deployment.py": "5d2eef071b530ab04947a2a840fdfe688c9e9b2fa5a2da6af94fd97f614191eb",
     "tests/test_meshy_setup.py": "2d2200b7c7029494ec53015051abac4aca42dfed5f81af8e2b03af7676bde944",
     "tests/test_resources.py": "a2e5758a5d0de5b74e4f430d797ca0c7d2a4e7c6bbd28127ed9d6ba443ec3d29",
     "Инструкция.html": "d5e8bafeb2bc61da03f9212c6f541c454e6a78335acd24a3061369dc81948247"

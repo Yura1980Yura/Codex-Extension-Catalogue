@@ -134,7 +134,12 @@ def shortcut(runtime, desktop, platform=None):
     else:
         target=desktop/(NAME+".desktop")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
-        def quoted(value):return '"'+str(value).replace("\\","\\\\").replace('"','\\"').replace("%","%%")+'"'
+        def quoted(value):
+            # Desktop Entry string escapes are decoded before Exec quoting.
+            # https://specifications.freedesktop.org/desktop-entry/latest/exec-variables.html
+            value=str(value).replace('%','%%')
+            if any(ord(c)<32 for c in value):raise ValueError('Управляющие символы в пути ярлыка не поддерживаются.')
+            return '"'+''.join('\\\\\\\\' if c=='\\' else '\\\\'+c if c in '"`$' else c for c in value)+'"'
         target.write_text("[Desktop Entry]\nType=Application\nName="+NAME+"\nExec="+quoted(interpreter)+" -X utf8 -B "+quoted(runtime/"launch.py")+"\nIcon="+str(runtime/"assets/asemic.png")+"\nTerminal=false\nCategories=Utility;\n",encoding="utf-8")
         target.chmod(0o755)
     if not target.exists(): raise ValueError("Создание ярлыка не подтверждено.")
