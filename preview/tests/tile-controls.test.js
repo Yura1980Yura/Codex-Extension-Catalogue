@@ -79,7 +79,8 @@ test('focus returns when the browser blurs a temporarily disabled switch',async 
 
 test('a single available plugin control names the part and does not invent a skill switch',async t=>{
  const f=fixture(t);assert.equal(f.tile('pdf').querySelectorAll('[data-activation]').length,1);
- assert.equal(f.tile('pdf').querySelector('details'),null);
+ assert.equal(f.tile('pdf').querySelector('.tile-control-menu'),null);
+ assert.ok(f.tile('pdf').querySelector('.control-explanation'));
  assert.equal(f.tile('pdf').querySelector('.tile-control-label>span').textContent,'Плагин');
  f.button('pdf').click();await f.finish();
  assert.match(f.tile('pdf').querySelector('.addon-state-line').textContent,/отключённые/);

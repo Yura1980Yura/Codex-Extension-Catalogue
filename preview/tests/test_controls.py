@@ -100,4 +100,20 @@ class Switches(unittest.TestCase):
         facts['sources']=[]
         self.assertFalse(self.control.decorate(self.snapshot)['addons'][0]['components'][2]['contexts']['all']['control']['supported'])
 
+    def test_unavailable_skill_reasons_do_not_change_switch_eligibility(self):
+        path=self.home/'.agents/skills/story/SKILL.md';path.parent.mkdir(parents=True);path.write_text('test')
+        card={'id':'vendor:author/story:story','locations':[{'path':str(path),'kind':'installation','scope':'user'}]}
+        a=self.control.activation
+        result=a.state(card,self.home)
+        self.assertFalse(result['supported']);self.assertIn('Известная ошибка каталога',result['message'])
+        self.assertTrue(a.state({**card,'id':'local:test:story'},self.home)['supported'])
+        for key,locations,expected in [
+            ('system:test',[], 'встроенный навык'),
+            ('plugin:test',[], 'входит в плагин'),
+            ('local:project:test',[{'path':str(self.root/'project/.agents/skills/story/SKILL.md'),'scope':'repo'}], 'навык проекта'),
+            ('vendor:missing',[], 'не определил')]:
+            result=a.state({'id':key,'locations':locations},self.home)
+            self.assertFalse(result['supported']);self.assertIn(expected,result['message'])
+        self.assertFalse(self.calls)
+
 if __name__=='__main__':unittest.main()

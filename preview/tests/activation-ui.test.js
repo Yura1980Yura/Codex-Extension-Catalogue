@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {singleControl,headerControlHTML,controlGuidance,controlContextNote} from '../web/activation-ui.js';
+import {singleControl,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML} from '../web/activation-ui.js';
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 const part={id:'skill:design',kind:'skill',title:'Дизайн',control:{supported:true,enabled:true}};
 test('single component has a labelled on/off control and preserves the project context',()=>{
@@ -29,4 +29,15 @@ test('project overrides and stale discovery remain explicit next to the global s
  assert.equal(controlContextNote({...part,enabled:null,state_note:'Ожидает свежей сверки'}),'Ожидает свежей сверки');
  assert.equal(controlContextNote({...part,enabled:true}),'');
  assert.equal(controlContextNote({...part,enabled:null}),'');
+});
+
+test('unavailable parts explain the reason without creating a switch or interpreting markup',t=>{
+ const locked={id:'skill:story',title:'<img src=x>',kind:'skill',control:{supported:false,message:'Известная ошибка каталога <script>unsafe</script>'}};
+ for(const parts of [[locked],[part,locked]]){
+  const dom=new JSDOM(tileControlsHTML(parts,esc));t.after(()=>dom.window.close());const doc=dom.window.document;
+  assert.equal(doc.querySelectorAll('[role=switch]').length,parts.length-1);
+  assert.ok(doc.querySelector('.control-explanation>summary'));
+  assert.match(doc.querySelector('.control-explanation').textContent,/Известная ошибка каталога/);
+  assert.equal(doc.querySelectorAll('img,script').length,0);
+ }
 });

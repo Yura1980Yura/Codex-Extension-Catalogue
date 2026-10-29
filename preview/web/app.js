@@ -1,5 +1,5 @@
 import {renderGuide} from './guide.js';
-import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML} from './activation-ui.js';
+import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML,unavailableControlsHTML} from './activation-ui.js';
 import {renderBacklog} from './backlog.js';
 import {renderSettings,selectSettingsProject} from './settings.js';
 import {contentKey,pollDelay,preserveView} from './state.js';
@@ -117,7 +117,7 @@ function controlHTML(c,explain=false){
 function controlsHTML(parts){
  if(singleControl(parts))return '';
  const available=parts.filter(c=>c.control?.supported);
- return section('Использовать в Codex',`${available.map(c=>controlHTML(c)).join('')||'<p class="tiny">Управление этими частями доступно в настройках Codex. Причина указана во вкладке «Состав».</p>'}${available.length?'<p class="tiny">Изменение сохраняется в настройках на этом компьютере и в истории. Перезапустите Codex, чтобы открытые чаты получили новое состояние. Настройки отдельных проектов могут иметь приоритет.</p>':''}<p class="control-result" role="status"></p>`);
+ return section('Использовать в Codex',`${available.map(c=>controlHTML(c)).join('')}${unavailableControlsHTML(parts,esc)}${available.length?'<p class="tiny">Изменение сохраняется в настройках на этом компьютере и в истории. Перезапустите Codex, чтобы открытые чаты получили новое состояние. Настройки отдельных проектов могут иметь приоритет.</p>':''}<p class="control-result" role="status"></p>`);
 }
 function bindControls(){
  document.querySelectorAll('[data-activation]').forEach(button=>{button.disabled=switching;button.onclick=async()=>{

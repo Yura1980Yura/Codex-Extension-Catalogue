@@ -30,9 +30,7 @@ def configuration(home):
     return tomllib.loads(raw.decode("utf-8-sig")), hashlib.sha256(raw).hexdigest()
 
 
-def target(card, home):
-    if not card["id"].startswith("local:"):
-        return None
+def personal_target(card, home):
     roots = [Path(home)/".agents/skills", Path(home)/".codex/skills"]
     candidates = set()
     for location in card.get("locations", []):
@@ -47,10 +45,29 @@ def target(card, home):
     return next(iter(candidates)) if len(candidates) == 1 else None
 
 
+def target(card, home):
+    if not card["id"].startswith("local:"):
+        return None
+    return personal_target(card, home)
+
+
+def unavailable_message(card, home):
+    key = card["id"]
+    if key.startswith("vendor:") and personal_target(card, home):
+        return "Известная ошибка каталога: этот личный навык установлен, но выключатель скрыт из-за отметки о стороннем авторе. Codex допускает его отключение; исправление каталога ещё не внесено."
+    if key.startswith("system:"):
+        return "Это встроенный навык Codex. Его отдельное включение и отключение в каталоге пока не реализовано."
+    if key.startswith("plugin:"):
+        return "Навык входит в плагин. Используйте выключатель плагина, если он доступен; отдельного выключателя этого навыка в каталоге пока нет."
+    if any(location.get("scope") in ("project", "repo") or location.get("project") for location in card.get("locations", [])):
+        return "Это навык проекта. Управление такими установками в каталоге пока не реализовано. Отсутствие выключателя не означает запрет отключения в Codex."
+    return "Каталог не определил единственную обычную личную установку в стандартных папках навыков. Управление этим расположением пока не поддерживается."
+
+
 def state(card, home, config=None):
     path = target(card, home)
     if path is None:
-        return {"supported": False, "enabled": None, "message": "Переключатель доступен для глобальных установок этого пользователя на этом компьютере. Навыками плагинов управляйте в настройках Codex."}
+        return {"supported": False, "enabled": None, "message": unavailable_message(card, home)}
     try:
         parsed, fingerprint = config or configuration(home)
         entries = parsed.get("skills", {}).get("config", [])
