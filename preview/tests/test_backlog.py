@@ -10,7 +10,7 @@ class SharedBacklog(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.docs = self.root/'vault/project'
         self.docs.mkdir(parents=True)
         self.index = self.docs/'Бэклог навыков.md'

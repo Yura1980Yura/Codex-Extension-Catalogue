@@ -1,5 +1,5 @@
 {
-  "bundle_id": "82c660c485346410ba85b2319bde2822a22ef13a20a833564dbd3458cc2512bc",
+  "bundle_id": "da93d8b3ba8508eef4a547822d62b322c676a1e3c8768a9ceb09f0851d538993",
   "date": "2026-10-29",
   "source_revision": "v3.6.0",
   "files": {
@@ -107,7 +107,7 @@
     "preview/tests/skill-actions.test.js": "b51ec325a718e4e14ef5c21888748b4fc22527055ad3389fdf549fb537f5a98a",
     "preview/tests/state.test.js": "e0b24a28e5fdbb2e7449c353cb6e0126bbbb405c5359fecd5b69d792c258cd90",
     "preview/tests/test_audit_counts.py": "e2bbf02b5cc70f2e8331095d86e08547b1df36945ca7a0dbbb9dea92ce8d7287",
-    "preview/tests/test_backlog.py": "0031b1142fc2e124c2f2ac2c800e3817714c48eca9ceae8af8bd1dc7d1ff5c19",
+    "preview/tests/test_backlog.py": "c232fcac42754c319a76fab94a1bb84d61038667c478fbd1442d589b5d0f1792",
     "preview/tests/test_collect_registry.py": "b042b78014362bf67972f404a361adbd2f8f44b8a6faac0740aecdff28498442",
     "preview/tests/test_controls.py": "2d4e12c7fc7e715cb03de38a5c54ee55a000b8c91cfc3bdcd20ebae9fec38ce7",
     "preview/tests/test_current.py": "e5b907b9c3b865f8b4be8f329645c4614c0f13bc1ce0c60276b2d6b85ce4d775",
@@ -116,7 +116,7 @@
     "preview/tests/test_model.py": "17f1fdc53ca0f8c7e12b7fc10fcb7d3850ac825394361496c36b05065e578579",
     "preview/tests/test_project_folders.py": "57afe2aabac068a491380c2d0b0152efd6e3785d2fced70ebfd42eb675d3f906",
     "preview/tests/test_server.py": "493960cc42907e82baeb6ebf68d673a8e3e1d4cde370e03cebaca12713eb76f2",
-    "preview/tests/test_skill_files.py": "10228af45a8860060b81c64a7343024081f9e60f706cdb4b6791021957ae5305",
+    "preview/tests/test_skill_files.py": "f2116c10f273ed2354825109498d2366b3e218261b33752fe01e11d8fab1a494",
     "preview/tests/test_skill_sources.py": "0bf2456f5a24aaca2dd541a7dd35bec5a437006cd55215f37d174723e51b6722",
     "preview/tests/tile-controls.test.js": "16a63e538fe87326e0cb66927b61205186d1d91b4388ae661c8235c74b4fece5",
     "preview/tests/wish-prompt.test.js": "2baae70fe965b91d2b8ec8ae648e03f7172e3ae0e726b9cc57b3dba46bc74f4a",

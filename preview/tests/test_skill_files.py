@@ -9,7 +9,7 @@ from server import Preview, write
 class SkillFileOperations(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.root=Path(self.tmp.name);self.home=self.root/'home';self.work=self.root/'work'
+        self.root=Path(self.tmp.name).resolve();self.home=self.root/'home';self.work=self.root/'work'
         self.settings={'home':str(self.home),'source_data':str(self.root/'legacy')}
         self.files=SkillFiles(self.settings,self.work)
         self.folder=self.home/'.agents/skills/example';self.folder.mkdir(parents=True)
