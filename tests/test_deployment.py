@@ -38,7 +38,7 @@ class Deployment(unittest.TestCase):
         self.assertEqual(note.read_text('utf-8'),'Keep me');self.assertTrue(d.read(overlay)['custom'])
         meta=d.read(Path(result['skill'])/'installation.json')
         self.assertEqual(meta['catalogue']['runtime'],str(runtime))
-        self.assertEqual(meta['source_revision'],'v3.6.1')
+        self.assertEqual(meta['source_revision'],'v'+d.read(ROOT/'release.json')['version'])
         self.assertFalse((runtime/'.codex').exists())
 
     def test_modified_program_skill_or_shortcut_is_not_overwritten(self):

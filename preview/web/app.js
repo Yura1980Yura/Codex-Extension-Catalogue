@@ -290,7 +290,7 @@ function instructionActions(parts){
 async function copyInvocation(id){
  const name=data.addons.flatMap(a=>a.skills||[]).find(s=>s.id===id)?.name||id;
  try{await navigator.clipboard.writeText(invocationFor(data.addons,id));toast('Вызов навыка скопирован.');}
- catch{toast('Копирование недоступно: используйте $'+name);}
+ catch{readPanel('Вызов навыка · '+name,`<p>Скопируйте текст вручную:</p><textarea readonly aria-label="Вызов навыка">${esc(invocationFor(data.addons,id))}</textarea>`);$('#reader-actions').innerHTML='';}
 }
 function bindInstructionActions(){
  document.querySelectorAll('[data-skill-document]').forEach(b=>b.onclick=async()=>{

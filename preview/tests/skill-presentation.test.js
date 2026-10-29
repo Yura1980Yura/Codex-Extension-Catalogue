@@ -29,4 +29,7 @@ test('copy uses the selected installation prompt; README opens from the known in
  assert.match(dom.window.document.querySelector('#reader-content').textContent,/Проверенная документация/);
  vm.runInContext("copyInvocation('missing-skill')",context);await new Promise(setImmediate);
  assert.equal(copied.at(-1),'Используй навык $missing-skill для моей задачи.');
+ context.navigator.clipboard.writeText=async()=>{throw new Error('Clipboard unavailable');};
+ vm.runInContext("copyInvocation('selected')",context);await new Promise(setImmediate);
+ assert.equal(dom.window.document.querySelector('#reader-content textarea').value,copied[0]);
 });
