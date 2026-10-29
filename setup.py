@@ -1,4 +1,4 @@
-"""Install the verified Asemic bundle without changing account connections."""
+"""Install the verified Codex Extension Catalogue bundle without changing account connections."""
 from pathlib import Path
 import argparse
 import json

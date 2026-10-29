@@ -891,7 +891,7 @@
       "reviewed_at": "2026-10-27"
     },
     "resource:catalog": {
-      "title": "Каталог навыков",
+      "title": "Каталог надстроек Codex",
       "provider": "Asemic",
       "origin": "asemic",
       "description": "Локальный каталог навыков, ресурсов, подключений и проектов.",
@@ -900,11 +900,11 @@
         "Связи с проектами",
         "История и документация"
       ],
-      "website": "https://github.com/Yura1980Yura/Skills-Catalogue",
-      "documentation": "https://github.com/Yura1980Yura/Skills-Catalogue",
+      "website": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
+      "documentation": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
       "integration_author": "Asemic",
       "connection_method": "Локальная возможность",
-      "connection_documentation": "https://github.com/Yura1980Yura/Skills-Catalogue",
+      "connection_documentation": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
       "connection_requirements": [
         "Поддерживаемая установка и доступ к нужным файлам."
       ],

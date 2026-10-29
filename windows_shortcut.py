@@ -34,7 +34,7 @@ class ShellLink:
 
 def create(target,interpreter,arguments,directory,icon):
     with ShellLink() as link:
-        for index,value in ((20,interpreter),(11,arguments),(9,directory),(7,'Asemic Catalogue')):
+        for index,value in ((20,interpreter),(11,arguments),(9,directory),(7,'Codex Extension Catalogue')):
             link.call(link.pointer,index,[ctypes.c_wchar_p],str(value))
         link.call(link.pointer,17,[ctypes.c_wchar_p,ctypes.c_int],str(icon),0)
         link.call(link.persist,6,[ctypes.c_wchar_p,ctypes.c_int],str(target),1)
