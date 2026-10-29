@@ -167,7 +167,8 @@ def collect(settings, work):
         from audit import audit
         reconciliation = audit(inventory, views, addons, session, projects, home)
         atomic_json(work/'reconciliation.json', reconciliation)
-        result = {'version': read(ROOT/'release.json', {}).get('version', 'unknown'), 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
+        release = read(ROOT/'release.json', {})
+        result = {'product':release.get('name'),'developer':release.get('developer'),'version': read(ROOT/'release.json', {}).get('version', 'unknown'), 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),

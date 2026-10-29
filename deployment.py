@@ -1,4 +1,4 @@
-"""Repeatable per-user installation of the verified Asemic catalogue."""
+"""Repeatable per-user installation of Codex Extension Catalogue by Asemic."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -18,7 +18,10 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT/"app/skill-catalog/scripts"))
 from platform_paths import codex_dir, user_folder
 
-NAME = "Asemic Catalogue"
+NAME = "Codex Extension Catalogue"
+MARKER = '.catalogue-installation.json'
+LEGACY_MARKER = '.asemic-installation.json'
+APPLICATION = 'codex-extension-catalogue'
 APP = "codex-catalog-overview-preview"
 
 
@@ -37,6 +40,10 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def installation(runtime):
+    return read(Path(runtime)/MARKER) or read(Path(runtime)/LEGACY_MARKER)
+
+
 def shortcut_digest(path):
     path=Path(path)
     if path.is_file():return digest(path)
@@ -50,7 +57,7 @@ def manifest(bundle):
     allowed=set(result["files"])
     excluded={".git",".local","node_modules","__pycache__",".venv",".pytest_cache"}
     actual={p.relative_to(bundle).as_posix() for p in bundle.rglob("*") if p.is_file()
-            and p.name not in ("MANIFEST.json",".asemic-installation.json")
+            and p.name not in ("MANIFEST.json",MARKER,LEGACY_MARKER)
             and not excluded.intersection(p.relative_to(bundle).parts)}
     if actual!=allowed: raise ValueError("Состав комплекта изменён. Используйте полный ZIP из Releases.")
     for name,expected in result["files"].items():
@@ -64,18 +71,26 @@ def locations(home=None, desktop=None, docs=None):
     home=Path(home or Path.home()).resolve();profile=codex_dir(home)
     data=profile/"skill-catalog"
     previous=read(data/"settings.json",{})
-    documents=Path(docs or previous.get("documentation_root") or user_folder("Documents",home)/"Asemic/Catalogue").resolve()
-    return {"home":str(home),"profile":str(profile),"runtime":str(home/"Applications/Asemic-Catalogue"),
-            "data":str(data),"work":str(profile/"asemic-catalogue-current"),"skill":str(home/".agents/skills/skill-catalog"),
+    documents=Path(docs or previous.get("documentation_root") or user_folder("Documents",home)/NAME).resolve()
+    runtime=home/'Applications/Codex-Extension-Catalogue'
+    legacy=home/'Applications/Asemic-Catalogue'
+    old=installation(legacy) or {}
+    if not runtime.exists() and old.get('home')==str(home) and old.get('profile')==str(profile) and old.get('application') in ('asemic-catalogue',APPLICATION):
+        runtime=legacy
+    installed=installation(runtime) or {}
+    work=Path(installed.get('work') or profile/'codex-extension-catalogue-current').resolve()
+    if not work.is_relative_to(profile):raise ValueError('Рабочие данные установки находятся вне выбранного профиля. Требуется проверка.')
+    return {"home":str(home),"profile":str(profile),"runtime":str(runtime),
+            "data":str(data),"work":str(work),"skill":str(home/".agents/skills/skill-catalog"),
             "notes":str(documents),"desktop":str(Path(desktop or user_folder("Desktop",home)).resolve())}
 
 
 def plan(bundle=ROOT,home=None,desktop=None,docs=None,port=None):
     info=manifest(bundle);paths=locations(home,desktop,docs)
-    runtime=Path(paths["runtime"]);marker=read(runtime/".asemic-installation.json")
+    runtime=Path(paths["runtime"]);marker=installation(runtime)
     if runtime.exists():
         if runtime.is_symlink() or runtime.is_junction(): raise ValueError("Папка программы перенаправлена ссылкой.")
-        if not marker or marker.get("application")!="asemic-catalogue" or marker.get("home")!=paths["home"]:
+        if not marker or marker.get("application") not in ("asemic-catalogue",APPLICATION) or marker.get("home")!=paths["home"] or marker.get('profile')!=paths['profile']:
             raise ValueError("Папка программы уже занята. Автоматическая замена отменена: "+str(runtime))
         if not marker.get("files"): raise ValueError("Нет контрольного списка установленной программы.")
         manifest(runtime)
@@ -98,10 +113,17 @@ def plan(bundle=ROOT,home=None,desktop=None,docs=None,port=None):
         raise ValueError("Одноимённый ярлык уже существует; требуется отдельная проверка.")
     if link.exists() and marker.get('shortcut_sha256')!=shortcut_digest(link):
         raise ValueError("Ярлык изменён пользователем; требуется проверка.")
+    legacy_link=Path((marker or {}).get('shortcut') or link)
+    if legacy_link!=link and legacy_link.exists():
+        expected=Path(paths['desktop'])/('Asemic Catalogue'+link.suffix)
+        if legacy_link!=expected or legacy_link.resolve().parent!=Path(paths['desktop']).resolve() or legacy_link.is_symlink() or legacy_link.is_junction():
+            raise ValueError('Прежний ярлык перенаправлен или расположен вне рабочего стола. Требуется проверка.')
+        if shortcut_digest(legacy_link)!=marker.get('shortcut_sha256'):
+            raise ValueError('Прежний ярлык изменён пользователем; требуется проверка.')
     port=port if port is not None else (marker or {}).get('port',8772)
     if type(port) is not int or not 1024<=port<=65535:raise ValueError('Порт должен быть от 1024 до 65535.')
-    return {"application":"asemic-catalogue","version":read(Path(bundle)/"release.json")["version"],"port":port,
-            "origin":"Asemic","action":"unchanged" if marker and marker.get("bundle_id")==info["bundle_id"] else "update" if marker else "install",
+    return {"application":APPLICATION,"product":NAME,"developer":"Asemic","version":read(Path(bundle)/"release.json")["version"],"port":port,
+            "origin":"Asemic","action":"unchanged" if marker and marker.get("bundle_id")==info["bundle_id"] and marker.get('application')==APPLICATION and marker.get('product')==NAME else "update" if marker else "install",
             "bundle_id":info["bundle_id"],"paths":paths}
 
 
@@ -116,7 +138,7 @@ def shortcut(runtime, desktop, platform=None):
         target=desktop/(NAME+".lnk")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
         from windows_shortcut import create
-        create(target,interpreter,'-X utf8 -B "'+str(runtime/'launch.py')+'"',runtime,runtime/'assets/asemic.ico')
+        create(target,interpreter,'-X utf8 -B "'+str(runtime/'launch.py')+'"',runtime,runtime/'assets/catalogue.ico')
     elif platform=="darwin":
         target=desktop/(NAME+".app")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
@@ -124,9 +146,9 @@ def shortcut(runtime, desktop, platform=None):
         executable=target/"Contents/MacOS/launch";executable.parent.mkdir()
         executable.write_text("#!/bin/sh\nexec "+__import__("shlex").quote(str(interpreter))+" -X utf8 -B "+__import__("shlex").quote(str(runtime/"launch.py"))+"\n",encoding="utf-8")
         executable.chmod(0o755)
-        shutil.copy2(runtime/"assets/asemic.icns",resources/"asemic.icns")
+        shutil.copy2(runtime/"assets/catalogue.icns",resources/"catalogue.icns")
         with (target/"Contents/Info.plist").open("wb") as file:
-            plistlib.dump({"CFBundleName":NAME,"CFBundleIdentifier":"ai.asemic.catalogue","CFBundleExecutable":"launch","CFBundleIconFile":"asemic.icns"},file)
+            plistlib.dump({"CFBundleName":NAME,"CFBundleIdentifier":"ai.asemic.codex-extension-catalogue","CFBundleExecutable":"launch","CFBundleIconFile":"catalogue.icns"},file)
     else:
         target=desktop/(NAME+".desktop")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
@@ -136,7 +158,7 @@ def shortcut(runtime, desktop, platform=None):
             value=str(value).replace('%','%%')
             if any(ord(c)<32 for c in value):raise ValueError('Управляющие символы в пути ярлыка не поддерживаются.')
             return '"'+''.join('\\\\\\\\' if c=='\\' else '\\\\'+c if c in '"`$' else c for c in value)+'"'
-        target.write_text("[Desktop Entry]\nType=Application\nName="+NAME+"\nExec="+quoted(interpreter)+" -X utf8 -B "+quoted(runtime/"launch.py")+"\nIcon="+str(runtime/"assets/asemic.png")+"\nTerminal=false\nCategories=Utility;\n",encoding="utf-8")
+        target.write_text("[Desktop Entry]\nType=Application\nName="+NAME+"\nExec="+quoted(interpreter)+" -X utf8 -B "+quoted(runtime/"launch.py")+"\nIcon="+str(runtime/"assets/catalogue.png")+"\nTerminal=false\nCategories=Utility;\n",encoding="utf-8")
         target.chmod(0o755)
     if not target.exists(): raise ValueError("Создание ярлыка не подтверждено.")
     return str(target)
@@ -180,20 +202,20 @@ def install(bundle=ROOT,home=None,offline=False,codex=None,desktop=None,docs=Non
     bundle=Path(bundle).resolve();prepared=plan(bundle,home,desktop,docs,port);paths=prepared["paths"]
     runtime=Path(paths["runtime"]);profile=Path(paths["profile"]);data=Path(paths["data"]);work=Path(paths["work"])
     info=manifest(bundle);program_backup=None
-    previous=read(runtime/".asemic-installation.json",{})
+    previous=installation(runtime) or {}
     import discovery
     executable=discovery.executable(codex) if not offline else codex
     runtime.parent.mkdir(parents=True,exist_ok=True);profile.mkdir(parents=True,exist_ok=True)
     if prepared["action"]!="unchanged":
         if runtime.is_symlink() or runtime.is_junction(): raise ValueError("Папка программы перенаправлена ссылкой.")
-        stage=Path(tempfile.mkdtemp(prefix=".asemic-",dir=runtime.parent))
+        stage=Path(tempfile.mkdtemp(prefix=".catalogue-",dir=runtime.parent))
         try:
             for name in [*info["files"],"MANIFEST.json"]:
                 target=stage/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(bundle/name,target)
             manifest(stage)
             if runtime.exists():
                 stop_managed(work)
-                program_backup=runtime.parent/".asemic-backups"/uuid.uuid4().hex
+                program_backup=runtime.parent/".catalogue-backups"/uuid.uuid4().hex
                 assert program_backup.resolve().is_relative_to(runtime.parent.resolve())
                 program_backup.parent.mkdir(exist_ok=True)
                 deadline=time.monotonic()+8
@@ -208,7 +230,7 @@ def install(bundle=ROOT,home=None,offline=False,codex=None,desktop=None,docs=Non
                 raise
         finally:
             if stage.exists():
-                assert stage.parent.resolve()==runtime.parent.resolve() and stage.name.startswith(".asemic-")
+                assert stage.parent.resolve()==runtime.parent.resolve() and stage.name.startswith(".catalogue-")
                 shutil.rmtree(stage)
     sys.path[:0]=[str(runtime/"app/skill-catalog/scripts"),str(runtime/"app/manager")]
     from storage import atomic_json, read_json
@@ -232,14 +254,26 @@ def install(bundle=ROOT,home=None,offline=False,codex=None,desktop=None,docs=Non
         if previous.get("shortcut")!=str(link): raise ValueError("На рабочем столе уже есть одноимённый ярлык. Он сохранён; проверьте его вручную.")
     else: marker["shortcut"]=shortcut(runtime,paths["desktop"])
     marker['shortcut_sha256']=shortcut_digest(link)
-    atomic_json(runtime/".asemic-installation.json",marker)
+    atomic_json(runtime/MARKER,marker)
+    legacy_link=Path(previous.get('shortcut') or link)
+    shortcut_backup=None
+    if legacy_link!=link and legacy_link.exists():
+        backup_root=work/'launcher-backups'
+        shortcut_backup=backup_root/uuid.uuid4().hex/legacy_link.name
+        if legacy_link.resolve().parent!=Path(paths['desktop']).resolve() or not shortcut_backup.resolve().is_relative_to(work.resolve()):
+            raise ValueError('Пути резервирования ярлыка требуют проверки.')
+        if any(p.is_symlink() or p.is_junction() for p in [backup_root,*legacy_link.rglob('*')] if p.exists()):
+            raise ValueError('Резервирование перенаправленного ярлыка отменено.')
+        shortcut_backup.parent.mkdir(parents=True)
+        shutil.move(str(legacy_link),str(shortcut_backup))
     return {"installed":str(runtime),"skill":paths["skill"],"data":str(data),"work":str(work),"notes":str(documents),
             "launcher":marker["shortcut"],"files_verified":skill_result["files_verified"],"version":prepared["version"],
-            "origin":"Asemic","outcome":prepared["action"],"program_backup":str(program_backup) if program_backup else None}
+            "product":NAME,"developer":"Asemic","origin":"Asemic","outcome":prepared["action"],
+            "program_backup":str(program_backup) if program_backup else None,"previous_launcher_backup":str(shortcut_backup) if shortcut_backup else None}
 
 
 def launch(runtime=ROOT, open_browser=True, port=None):
-    runtime=Path(runtime).resolve();marker=read(runtime/".asemic-installation.json")
+    runtime=Path(runtime).resolve();marker=installation(runtime)
     work=Path(marker["work"]) if marker else runtime/".local/catalog-current"
     port=port if port is not None else (marker or {}).get('port',8772)
     if marker:os.environ["CODEX_HOME"]=marker["profile"]
@@ -272,7 +306,7 @@ def check(runtime=ROOT, refresh=False, open_browser=False, port=None):
             time.sleep(.4)
         if state.get("job",{}).get("state")=="error":raise ValueError("Сверка не завершена; прежний снимок сохранён.")
     own=[c for a in state.get("addons",[]) for c in a.get("components",[]) if c.get("name")=="skill-catalog"]
-    return {"url":read(work/"server.json")["url"],"version":state.get("version"),"origin":"Asemic",
+    return {"url":read(work/"server.json")["url"],"product":NAME,"developer":"Asemic","version":state.get("version"),"origin":"Asemic",
             "skill_confirmed":any(c.get("installed") for c in own),"skill_paths":[c.get("path") for c in own],
             "project_count":len(state.get("projects",[])),"last_checked":state.get("updated_at"),
             "source_coverage":state.get("coverage",{}).get("reconciliation",{})}

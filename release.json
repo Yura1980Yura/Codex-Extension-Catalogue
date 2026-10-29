@@ -1,13 +1,15 @@
 {
-  "name": "Asemic — каталог Codex",
-  "version": "3.6.0",
+  "name": "Codex Extension Catalogue",
+  "version": "3.6.1",
   "status": "current",
   "date": "2026-10-29",
   "entry": "launch.py",
   "interface": "preview/",
   "legacy_interface": "app/manager/",
   "legacy_status": "retained_as_history",
-  "repository": "https://github.com/Yura1980Yura/Skills-Catalogue",
+  "repository": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
   "branch": "codex/catalog-v2",
-  "origin": "Asemic"
+  "origin": "Asemic",
+  "name_ru": "Каталог надстроек Codex",
+  "developer": "Asemic"
 }

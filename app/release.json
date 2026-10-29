@@ -1,8 +1,8 @@
 {
-  "name": "Каталог Codex",
-  "version": "3.6.0",
-  "source_revision": "v3.6.0",
-  "distribution": "Asemic portable catalogue",
+  "name": "Codex Extension Catalogue",
+  "version": "3.6.1",
+  "source_revision": "v3.6.1",
+  "distribution": "Codex Extension Catalogue portable distribution",
   "local_update": {
     "date": "2026-10-27",
     "feature": "resource-organization-v2",
@@ -10,7 +10,9 @@
     "upstream_commit": "a93f99c809b3297717ab0c74f52fb1c391c31080",
     "compatibility_fix": "Preserve saved empty directions and explicitly unknown origins during migration"
   },
-  "source_repository": "https://github.com/Yura1980Yura/Skills-Catalogue",
+  "source_repository": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
   "source_branch": "codex/catalog-v2",
-  "origin": "Asemic"
+  "origin": "Asemic",
+  "name_ru": "Каталог надстроек Codex",
+  "developer": "Asemic"
 }

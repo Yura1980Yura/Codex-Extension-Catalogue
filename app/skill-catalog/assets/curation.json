@@ -1,6 +1,6 @@
 {
   "skill-catalog": {
-    "title_ru": "Каталог навыков",
+    "title_ru": "Каталог надстроек Codex",
     "origin": "asemic",
     "tasks": [
       "навыки",
@@ -16,7 +16,7 @@
     "origin_evidence": "Каталог и собственный навык разработаны Asemic.",
     "source": {
       "author": "Asemic",
-      "repository": "Yura1980Yura/Skills-Catalogue"
+      "repository": "Yura1980Yura/Codex-Extension-Catalogue"
     }
   },
   "reverse-engineer-anything": {

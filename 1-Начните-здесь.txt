@@ -1,4 +1,4 @@
-Asemic — каталог Codex 3.6
+Codex Extension Catalogue — каталог надстроек Codex 3.6.1
 Начните с README.md или вставьте START-CODEX.txt в локальный чат Codex.
-Готовые выпуски: https://github.com/Yura1980Yura/Skills-Catalogue/releases/latest
+Готовые выпуски: https://github.com/Yura1980Yura/Codex-Extension-Catalogue/releases/latest
 Предыдущие инструкции сохранены в docs/legacy-v2/.
