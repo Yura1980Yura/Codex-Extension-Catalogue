@@ -1,4 +1,5 @@
 import {renderGuide} from './guide.js';
+import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote} from './activation-ui.js';
 import {renderBacklog} from './backlog.js';
 import {renderSettings,selectSettingsProject} from './settings.js';
 import {contentKey,pollDelay,preserveView} from './state.js';
@@ -94,33 +95,34 @@ function paintGrid(){
 }
 function section(title,body){return body?`<section class="section"><h2>${esc(title)}</h2>${body}</section>`:'';}
 function textList(value){if(!value||Array.isArray(value)&&!value.length)return '';return Array.isArray(value)?`<ul>${value.map(v=>`<li>${esc(typeof v==='string'?v:JSON.stringify(v))}</li>`).join('')}</ul>`:`<p>${esc(value)}</p>`;}
-function componentHTML(c){
+function componentHTML(c,showControl=true){
  const projectName=c.contextId?data.projects.find(p=>p.id===c.contextId)?.name:c.project_path?data.projects.find(p=>p.path===c.project_path)?.name:'';
  const installed=c.installed?'Установлено':c.file_found?'Файл найден · доступность Codex не подтверждена':'Наличие не подтверждено';
  const enabled=c.enabled===true?'Включено':c.enabled===false?'Отключено':'Включение не проверено';
  const details=[c.path?`<p>Путь: <span class="path">${esc(c.path)}</span></p>`:'',c.version?`<p>Версия: ${esc(c.version)}</p>`:'',c.fingerprint?`<p>Отпечаток версии: <code>${esc(c.fingerprint)}</code></p>`:'',...(c.sources||[]).map(s=>`<p>${esc(s.scope)}: <span class="path">${esc(s.path)}</span>${s.applied?'':' (не применяется)'}</p>`)].join('');
  const seen=(c.observations||[]).filter(o=>o.kind==='session');
- return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${c.kind==='skill'?`<div class="links"><button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.name)}">Скопировать вызов</button></div>`:''}${controlHTML(c,true)}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
+ return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${c.kind==='skill'?`<div class="links"><button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.name)}">Скопировать вызов</button></div>`:''}${showControl?controlHTML(c,true):''}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
 }
 function controlHTML(c,explain=false){
  const control=c.control;
  if(!control?.supported)return explain?`<p class="tiny control-unavailable">${esc(control?.message||'Переключатель для этой части пока недоступен.')}</p>`:'';
  const name=c.title||c.name;
- return `<div class="control-row"><div><strong>${esc(name)}</strong><small>Глобально · на этом компьютере</small></div><button class="codex-switch" role="switch" aria-checked="${control.enabled}" aria-label="Использовать в Codex: ${esc(name)}" data-activation="${esc(c.id)}" data-context="${esc(c.contextId||filters.project||'all')}"><span class="switch-track" aria-hidden="true"></span><span>${control.enabled?'Включено':'Отключено'}</span></button></div>${c.state_note?`<p class="tiny">${esc(c.state_note)}</p>`:c.enabled!==null&&c.enabled!==control.enabled?`<p class="tiny">В этом проекте: ${c.enabled?'включено':'отключено'}. Его действующая настройка отличается от общей.</p>`:''}`;
+ return `<div class="control-row"><div><strong>${esc(name)}</strong><small>Глобально · на этом компьютере</small></div>${switchHTML(c,esc,filters.project||'all')}</div>${c.state_note?`<p class="tiny">${esc(c.state_note)}</p>`:c.enabled!==null&&c.enabled!==control.enabled?`<p class="tiny">В этом проекте: ${c.enabled?'включено':'отключено'}. Его действующая настройка отличается от общей.</p>`:''}`;
 }
 function controlsHTML(parts){
+ if(singleControl(parts))return '';
  const available=parts.filter(c=>c.control?.supported);
  return section('Использовать в Codex',`${available.map(c=>controlHTML(c)).join('')||'<p class="tiny">Управление этими частями доступно в настройках Codex. Причина указана во вкладке «Состав».</p>'}${available.length?'<p class="tiny">Изменение сохраняется в настройках на этом компьютере и в истории. Перезапустите Codex, чтобы открытые чаты получили новое состояние. Настройки отдельных проектов могут иметь приоритет.</p>':''}<p class="control-result" role="status"></p>`);
 }
 function bindControls(){
  document.querySelectorAll('[data-activation]').forEach(button=>button.onclick=async()=>{
   if(switching){toast('Дождитесь сохранения текущего переключения.');return;}
-  const id=selected,tab=detailTab;
+  const id=selected,tab=detailTab,restoreFocus=document.activeElement===button;
   const addon=data.addons.find(a=>a.id===id);
   const component=componentsFor(addon,project()).find(c=>c.id===button.dataset.activation&&(c.contextId||filters.project||'all')===button.dataset.context);
   if(!component?.control?.supported)return;
   switching=true;stateEpoch++;
-  const buttons=[...document.querySelectorAll('[data-activation]')];buttons.forEach(b=>b.disabled=true);
+  const buttons=[...document.querySelectorAll('[data-activation]')];buttons.forEach(b=>b.disabled=true);button.setAttribute('aria-busy','true');
   const target=$('.control-result');if(target)target.textContent='Сохраняем настройку в Codex…';
   let message='';
   try{
@@ -131,7 +133,7 @@ function bindControls(){
   finally{
    switching=false;stateEpoch++;clearTimeout(poll);
    if(['all','project','favorites'].includes(page))paintGrid();
-   if($('#details').open&&selected===id){openAddon(id,tab);const result=$('.control-result');if(result)result.textContent=message;}
+   if($('#details').open&&selected===id){openAddon(id,tab);const result=$('.control-result');if(result)result.textContent=message;if(restoreFocus)Array.from(document.querySelectorAll('[data-activation]')).find(b=>b.dataset.activation===button.dataset.activation&&b.dataset.context===button.dataset.context)?.focus();}
    buttons.forEach(b=>b.disabled=false);toast(message);
   }
  });
@@ -165,7 +167,7 @@ function notesHTML(a){const item=data.overlay.items[a.id]||{};return section('М
 function noteForm(action,label){return `<form class="note-form" data-note-action="${action}"><label for="note-text">${label}</label><textarea id="note-text" required maxlength="20000" placeholder="Ваш текст…"></textarea><div class="actions"><span class="tiny">Личная запись сохранится на этом компьютере.</span><button class="primary" type="submit">Сохранить ${action==='wish'?'пожелание':'заметку'}</button></div><p class="error" role="alert"></p></form>`;}
 function openAddon(id,tab='overview'){
  const a=data.addons.find(a=>a.id===id);if(!a)return;selected=id;detailTab=tab;const parts=componentsFor(a,project()).filter(c=>page!=='found'||c.kind==='skill'&&c.file_found&&!c.installed);
- $('#detail-content').innerHTML=`<header class="drawer-head"><span>${esc(project()?.name||'Весь Codex')} / Надстройка</span><button class="icon-button" id="close-detail" aria-label="Закрыть карточку">${icon('close')}</button></header><div class="drawer-body"><div class="drawer-title"><span class="addon-mark ${primaryKind(parts)}">${icon(primaryKind(parts))}</span><div><h1 id="detail-title">${esc(a.title)}</h1><div class="composition">${composition(parts)}</div></div></div><p class="drawer-intro">${esc(a.description)}</p><div class="drawer-tabs" role="group" aria-label="Раздел карточки">${[['overview','Обзор'],['composition','Состав · '+parts.length],['notes','Заметки и опыт'],['sources','Источники']].map(([k,v])=>`<button data-tab="${k}" aria-pressed="${detailTab===k}">${v}</button>`).join('')}</div><div id="drawer-panel">${detailTab==='overview'?overviewHTML(a,parts):detailTab==='composition'?`<p class="tiny">Каждая часть имеет свою область и состояние. Типы в фильтрах соответствуют этому составу.</p>${skillFileTools(parts,esc)}${parts.map(componentHTML).join('')||'<p>Действующая установка не обнаружена. Это справочная карточка.</p>'}<p class="control-result" role="status"></p>`:detailTab==='notes'?notesHTML(a):sourcesHTML(a,parts)}</div></div>`;
+ $('#detail-content').innerHTML=`<header class="drawer-head"><span>${esc(project()?.name||'Весь Codex')} / Надстройка</span><div class="drawer-top-actions">${headerControlHTML(parts,esc,filters.project||'all')}<button class="icon-button" id="close-detail" aria-label="Закрыть карточку">${icon('close')}</button></div></header><div class="drawer-body"><div class="drawer-title"><span class="addon-mark ${primaryKind(parts)}">${icon(primaryKind(parts))}</span><div><h1 id="detail-title">${esc(a.title)}</h1><div class="composition">${composition(parts)}</div></div></div><p class="drawer-intro">${esc(a.description)}</p>${singleControl(parts)?`<p class="tiny control-guidance">${esc(controlGuidance)}</p>${controlContextNote(parts[0])?`<p class="soft-note amber">${esc(controlContextNote(parts[0]))}</p>`:''}<p class="control-result" role="status"></p>`:''}<div class="drawer-tabs" role="group" aria-label="Раздел карточки">${[['overview','Обзор'],['composition','Состав · '+parts.length],['notes','Заметки и опыт'],['sources','Источники']].map(([k,v])=>`<button data-tab="${k}" aria-pressed="${detailTab===k}">${v}</button>`).join('')}</div><div id="drawer-panel">${detailTab==='overview'?overviewHTML(a,parts):detailTab==='composition'?`<p class="tiny">Каждая часть имеет свою область и состояние. Типы в фильтрах соответствуют этому составу.</p>${skillFileTools(parts,esc)}${parts.map(c=>componentHTML(c,!singleControl(parts))).join('')||'<p>Действующая установка не обнаружена. Это справочная карточка.</p>'}<p class="control-result" role="status"></p>`:detailTab==='notes'?notesHTML(a):sourcesHTML(a,parts)}</div></div>`;
  $('#close-detail').onclick=()=>closeDialog($('#details'));
  bindSkillFileTools({data,addon:a,parts,api,esc,readPanel,toast,closeReader:()=>closeDialog($('#reader')),acceptState:next=>{data=next;renderPage();if($('#details').open)openAddon(id,tab);}});
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>openAddon(id,b.dataset.tab));
