@@ -1,4 +1,5 @@
 """Reconcile independent discovery inputs against the final displayed inventory."""
+from runtime_paths import codex_dir
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,7 +22,7 @@ def audit(inventory, views, addons, session, projects, home=None):
     session_paths = {norm(s['path']) for s in session.get('skills', [])}
     filesystem_paths = set()
     if home is not None:
-        roots = [Path(home)/'.agents/skills', Path(home)/'.codex/skills']
+        roots = [Path(home)/'.agents/skills', codex_dir(home)/'skills']
         roots += [Path(p['path'])/sub for p in projects for sub in ('.agents/skills', '.codex/skills')]
         for root in roots:
             if root.is_dir():

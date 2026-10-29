@@ -90,8 +90,6 @@ def migrate(directory):
                 for rid in spec['skills'].get(skill.get('name','').casefold(),{}).get('resource_ids',[]):
                     selected[rid]='Рекомендован для задач, связанных с навыком «'+skill.get('name','')+'»; применение ещё не подтверждено.'
             name=project.get('name','').casefold()
-            if name=='rea':selected.update({'resource:rea':'Разбор готовых программ по отдельному поручению.','resource:catalog':'Организация навыков и ресурсов этого рабочего пространства.','resource:github':'Хранение и проверка изменений исходного кода.'})
-            if 'zoo' in name:selected.update({'resource:blender':'Подготовка и проверка 3D-ассетов игры.','resource:imagegen':'Подготовка графических материалов по отдельному поручению.','resource:github':'Хранение изменений игры и проверка результатов.','resource:meshy':'Возможный способ подготовки 3D; платные операции только по отдельной команде.'})
             for rid,purpose in selected.items():
                 if rid not in links:
                     links[rid]={'purpose':purpose,'role':'recommended','policy':'explicit','evidence':'','confirmed':False,'updated_at':now()};seeded.append({'project_id':pid,'resource_id':rid})

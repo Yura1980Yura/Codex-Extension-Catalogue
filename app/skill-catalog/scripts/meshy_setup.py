@@ -1,4 +1,5 @@
 """Local Meshy credential form backend. Only the free balance endpoint is called."""
+from platform_paths import codex_dir
 from pathlib import Path
 import hashlib
 import json
@@ -15,7 +16,7 @@ BALANCE_URL = "https://api.meshy.ai/openapi/v1/balance"
 
 
 def root(home=None):
-    return Path(home or Path.home())/".codex/service-connectors/meshy"
+    return codex_dir(home)/"service-connectors/meshy"
 
 
 def validate_key(value):
@@ -48,7 +49,7 @@ def balance(key, opener=None):
 
 
 def _configuration(home):
-    path = Path(home)/".codex/config.toml"
+    path = codex_dir(home)/"config.toml"
     try:
         config = tomllib.loads(path.read_text("utf-8-sig"))
         names = [n for n in config.get("mcp_servers", {}) if "meshy" in n.lower()]

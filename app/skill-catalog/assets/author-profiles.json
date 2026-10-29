@@ -72,6 +72,18 @@
         ]
       },
       "evidence": "Официальный README репозитория anthropics/skills. Проверено 23.10.2026."
+    },
+    "Yura1980Yura/Skills-Catalogue": {
+      "profile": {
+        "name": "Asemic",
+        "links": [
+          {
+            "label": "Репозиторий каталога",
+            "url": "https://github.com/Yura1980Yura/Skills-Catalogue"
+          }
+        ]
+      },
+      "evidence": "Автор каталога и его собственного навыка — Asemic."
     }
   },
   "skills": {

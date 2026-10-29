@@ -1,4 +1,5 @@
 """Explicit local skill operations. Known ids only; never run skill instructions."""
+from runtime_paths import codex_dir
 import hashlib
 import json
 import os
@@ -128,7 +129,7 @@ class SkillFiles:
         self.work = Path(work).resolve()
 
     def roots(self, snapshot):
-        roots = [self.home/'.agents/skills', self.home/'.codex/skills']
+        roots = [self.home/'.agents/skills', codex_dir(self.home)/'skills']
         roots += [Path(p['path'])/sub for p in snapshot.get('projects', [])
                   for sub in ('.agents/skills', '.codex/skills')]
         return roots

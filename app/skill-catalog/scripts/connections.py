@@ -1,5 +1,6 @@
 """Service registry and secret-free Codex inspection. Never writes Codex config."""
 from __future__ import annotations
+from platform_paths import codex_dir
 
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -119,7 +120,7 @@ def inspect(home, cwd=None, explicit=None, request_fn=discovery.request):
         return {"checked_at": timestamp, "status": "effective", "source": "Codex config/read", "entries": sanitize_config(response), "warning": None}
     except Exception:
         # Never forward parser/RPC errors: they can contain full secret values.
-        path = Path(home)/".codex/config.toml"
+        path = codex_dir(home)/"config.toml"
         try:
             config = tomllib.loads(path.read_text("utf-8-sig")) if path.exists() else {}
             response = {"config": config, "layers": [{"config": config, "name": {"type": "user", "file": str(path)}}]}

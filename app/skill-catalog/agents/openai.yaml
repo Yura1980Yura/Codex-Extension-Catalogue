@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asemic — каталог Codex"
+  short_description: "Навыки, подключения, проекты и пожелания Codex"
+  default_prompt: "Используй $skill-catalog: покажи состояние моего каталога, время последней сверки и доступные надстройки."

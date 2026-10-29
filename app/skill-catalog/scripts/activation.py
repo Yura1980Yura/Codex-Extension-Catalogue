@@ -3,6 +3,7 @@
 The config is authoritative. A durable receipt recovers history after interruption;
 recovery never retries a configuration write or rewrites an old configuration.
 """
+from platform_paths import codex_dir
 import hashlib
 import os
 from pathlib import Path
@@ -25,13 +26,13 @@ def normalized(path):
 
 
 def configuration(home):
-    path = Path(home)/".codex/config.toml"
+    path = codex_dir(home)/"config.toml"
     raw = path.read_bytes() if path.exists() else b""
     return tomllib.loads(raw.decode("utf-8-sig")), hashlib.sha256(raw).hexdigest()
 
 
 def personal_target(card, home):
-    roots = [Path(home)/".agents/skills", Path(home)/".codex/skills"]
+    roots = [Path(home)/".agents/skills", codex_dir(home)/"skills"]
     candidates = set()
     for location in card.get("locations", []):
         path = Path(location["path"])
@@ -133,7 +134,7 @@ def change(directory, home, project, key, enabled, revision, request_fn=None):
         explicit = read_json(Path(directory)/"settings.json", {}).get("codex_executable")
         write_error = False
         try:
-            request_fn("skills/config/write", {"path": str(path), "enabled": enabled}, explicit=explicit, codex_home=Path(home)/".codex")
+            request_fn("skills/config/write", {"path": str(path), "enabled": enabled}, explicit=explicit, codex_home=codex_dir(home))
         except (OSError, RuntimeError, ValueError):
             # A timeout may follow a committed write. Read back before reporting.
             write_error = True
@@ -142,7 +143,7 @@ def change(directory, home, project, key, enabled, revision, request_fn=None):
         if actual["supported"] and actual["enabled"] == enabled:
             try:
                 cwds = list(dict.fromkeys([str(project), *[o["cwd"] for o in card.get("observations", []) if o["kind"] == "discovery" and Path(o["cwd"]).is_dir()]]))
-                result, _ = request_fn("skills/list", {"cwds": cwds, "forceReload": True}, explicit=explicit, codex_home=Path(home)/".codex")
+                result, _ = request_fn("skills/list", {"cwds": cwds, "forceReload": True}, explicit=explicit, codex_home=codex_dir(home))
                 observations = [s for row in result.get("data", []) for s in row.get("skills", []) if normalized(s.get("path", "")) == normalized(path)]
                 verification = "confirmed" if observations and all(s.get("enabled") is enabled for s in observations) else "not_confirmed"
                 pending["observations"] = [{"kind": "discovery", "cwd": row["cwd"], "path": s["path"], "enabled": s["enabled"], "at": now()} for row in result.get("data", []) for s in row.get("skills", []) if normalized(s.get("path", "")) == normalized(path)]

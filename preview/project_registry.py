@@ -3,12 +3,13 @@
 This is a local adapter, not a supported Codex API. Extra rootPaths are access
 permissions, not proof that all those folders are the project's source tree.
 """
+from runtime_paths import codex_dir
 from pathlib import Path
 import json
 from model import norm
 
 def registered_projects(home, project_id):
-    path = Path(home)/'.codex/.codex-global-state.json'
+    path = codex_dir(home)/'.codex-global-state.json'
     try:
         state = json.loads(path.read_text('utf-8-sig'))
     except (OSError, ValueError):

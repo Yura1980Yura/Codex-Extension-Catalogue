@@ -11,7 +11,10 @@ import webbrowser
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT/".local/manager.json"
-DATA_ID = hashlib.sha256(str((Path.home()/".codex/skill-catalog").resolve()).encode()).hexdigest()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"skill-catalog/scripts"))
+from platform_paths import codex_dir
+
+DATA_ID = hashlib.sha256(str((codex_dir()/"skill-catalog").resolve()).encode()).hexdigest()
 
 
 def running():

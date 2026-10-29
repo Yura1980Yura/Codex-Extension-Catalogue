@@ -1,5 +1,6 @@
 """Personal skill inventory, separate user annotations, compact task navigation."""
 from __future__ import annotations
+from platform_paths import codex_dir
 
 import argparse
 import directions as themes
@@ -114,7 +115,7 @@ def vendor_index(projects):
 
 def plugin_parts(path, home):
     try:
-        parts = Path(path).resolve().relative_to(home / ".codex/plugins/cache").parts
+        parts = Path(path).resolve().relative_to(codex_dir(home)/"plugins/cache").parts
         if len(parts) >= 6 and parts[3] == "skills":
             return {"plugin_id": f"{parts[1]}@{parts[0]}", "version": parts[2], "market": parts[0]}
     except ValueError:
@@ -199,11 +200,11 @@ def refresh(directory, home, cwd, project_roots=(), session=None, discovery_fn=d
                     item["observations"].append(observed)
 
         # All caches are evidence of files only, never evidence of an enabled plugin.
-        cache = home / ".codex/plugins/cache"
+        cache = codex_dir(home)/"plugins/cache"
         if cache.exists():
             for path in cache.glob("*/*/*/skills/*/SKILL.md"):
                 add(path, "cache")
-        for parent in (home/".agents/skills", home/".codex/skills", home/".codex/skills/.system"):
+        for parent in (home/".agents/skills", codex_dir(home)/"skills", codex_dir(home)/"skills/.system"):
             if parent.exists():
                 for path in parent.glob("*/SKILL.md"):
                     add(path, "installation", scope="system" if parent.name == ".system" else "user")
@@ -427,7 +428,7 @@ def main():
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path.home()/".codex/skill-catalog")
+    parser.add_argument("--data-dir", type=Path, default=codex_dir()/"skill-catalog")
     parser.add_argument("--home", type=Path, default=Path.home(), help=argparse.SUPPRESS)
     sub = parser.add_subparsers(dest="command", required=True)
     services = sub.add_parser("services", help="Прочитать подключения Codex и связи сервисов; секреты не выводятся")

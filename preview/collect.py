@@ -1,5 +1,6 @@
 """Read the installed catalogue and Codex into an isolated, replaceable snapshot."""
 from __future__ import annotations
+from runtime_paths import codex_dir
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
@@ -51,7 +52,7 @@ def bundle_metadata(card):
 
 def collect(settings, work):
     home = Path(settings.get('home') or Path.home()).resolve()
-    data = Path(settings.get('source_data') or home/'.codex/skill-catalog').resolve()
+    data = Path(settings.get('source_data') or codex_dir(home)/'skill-catalog').resolve()
     runtime = runtime_path(settings)
     sys.path[:0] = [str(runtime/'skill-catalog/scripts'), str(runtime/'manager')]
     import catalog, connections, resources, installation, journal, localization
@@ -166,7 +167,7 @@ def collect(settings, work):
         from audit import audit
         reconciliation = audit(inventory, views, addons, session, projects, home)
         atomic_json(work/'reconciliation.json', reconciliation)
-        result = {'version': '3.5.3', 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
+        result = {'version': read(ROOT/'release.json', {}).get('version', 'unknown'), 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),

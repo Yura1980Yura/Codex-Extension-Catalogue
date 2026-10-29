@@ -1,4 +1,5 @@
 """Explicit catalogue search roots. File discovery never grants Codex access."""
+from runtime_paths import codex_dir
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
@@ -31,9 +32,9 @@ def definitions(settings, projects, overlay):
             'project_name':project.get('name', '') if project else '',
             'category':category, 'enabled':True, 'editable':False})
     add(home/'.agents/skills', 'Личные навыки Codex')
-    add(home/'.codex/skills', 'Навыки в папке Codex')
-    add(home/'.codex/skills/.system', 'Встроенные навыки', category='system')
-    add(home/'.codex/plugins/cache', 'Файлы плагинов', category='plugins')
+    add(codex_dir(home)/'skills', 'Навыки в папке Codex')
+    add(codex_dir(home)/'skills/.system', 'Встроенные навыки', category='system')
+    add(codex_dir(home)/'plugins/cache', 'Файлы плагинов', category='plugins')
     for project in projects:
         root = Path(file_folder(project, overlay))
         add(root/'.agents/skills', 'Навыки проекта', 'local', project)

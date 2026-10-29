@@ -194,21 +194,6 @@
         "resource:visualize"
       ]
     },
-    "zoo-cafe": {
-      "direction_ids": [
-        "development",
-        "design"
-      ],
-      "tags": [
-        "игра",
-        "Zoo-Cafe"
-      ],
-      "resource_ids": [
-        "resource:github",
-        "resource:blender",
-        "resource:imagegen"
-      ]
-    },
     "skill-catalog": {
       "direction_ids": [
         "organization",
@@ -264,22 +249,22 @@
         ]
       }
     },
-    "zoo-cafe": {
-      "origin": "personal",
-      "evidence": "Навык проекта владельца каталога: Yura1980Yura/Zoo-Cafe; источник установки указан в журнале операций.",
-      "author": {
-        "name": "Yura1980Yura",
-        "links": [
-          {
-            "label": "Проект Zoo-Cafe",
-            "url": "https://github.com/Yura1980Yura/Zoo-Cafe"
-          }
-        ]
-      }
-    },
     "expo-prepare-materials": {
       "origin": "third_party",
       "evidence": "Получен из передаваемого комплекта Exhibition-Employee-Kit; источник зафиксирован в installation.json и журнале. Комплект не является поставкой OpenAI; конкретное авторство не установлено."
+    },
+    "skill-catalog": {
+      "origin": "asemic",
+      "evidence": "Каталог и собственный навык разработаны Asemic.",
+      "author": {
+        "name": "Asemic",
+        "links": [
+          {
+            "label": "Исходный репозиторий",
+            "url": "https://github.com/Yura1980Yura/Skills-Catalogue"
+          }
+        ]
+      }
     }
   }
 }

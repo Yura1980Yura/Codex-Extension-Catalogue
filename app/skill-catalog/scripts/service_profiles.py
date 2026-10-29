@@ -5,7 +5,7 @@ import json
 import re
 from urllib.parse import urlsplit
 
-ORIGINS = {'builtin', 'third_party', 'personal', 'unknown'}
+ORIGINS = {'asemic', 'builtin', 'third_party', 'personal', 'unknown'}
 ASSET = Path(__file__).resolve().parents[1]/'assets/service-profiles.json'
 
 

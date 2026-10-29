@@ -109,7 +109,11 @@ def build(cards, views, resources, projects, installation_fn, overrides=None):
         for e in entries:
             loc = next((l for l in s.get('locations', []) if norm(Path(l['path']).parent) == norm(e['installation_path'] or '.')), {})
             scope = {'user': 'global', 'system': 'global', 'project': 'local'}.get(e['kind'], 'unknown')
-            observations = [o for o in s.get('observations', []) if not loc or norm(o.get('path', '.')) == norm(loc.get('path', '.'))]
+            # Codex may report the junction target while inventory keeps the
+            # installed alias. Both paths identify this location, not another
+            # copy of a skill with the same name.
+            location_paths = {norm(p) for p in (loc.get('path'), loc.get('resolved_path')) if p}
+            observations = [o for o in s.get('observations', []) if not loc or norm(o.get('path', '.')) in location_paths]
             discovered = [o for o in observations if o['kind'] == 'discovery']
             session = [o for o in observations if o['kind'] == 'session']
             # A plugin discovered for a cwd is inherited there; a bare cache is not installed.

@@ -60,12 +60,12 @@ class ResourceTests(unittest.TestCase):
         self.assertEqual(pdf['availability']['state'],'connected');self.assertEqual(self.config.read_bytes(),self.before)
 
     def test_migration_is_repeatable_and_preserves_explicit_choices(self):
-        self.inventory['skills']['zoo']={'id':'zoo','name':'zoo-cafe','origin':'unknown','state':'present','tasks':[]}
+        self.inventory['skills']['catalogue']={'id':'catalogue','name':'skill-catalog','origin':'unknown','state':'present','tasks':[]}
         self.inventory['skills']['blender']={'id':'blender','name':'blender-image-to-3d','origin':'unknown','state':'present','tasks':[]}
         atomic_json(self.data/'inventory.json',self.inventory)
         result=o.migrate(self.data);self.assertTrue(result['saved'])
         saved=read_json(self.data/'user.json');self.assertEqual(saved['skills']['pdf']['notes'],['Сохранить мою заметку'])
-        self.assertEqual(saved['skills']['zoo']['origin'],'personal');self.assertEqual(saved['skills']['blender']['origin'],'third_party')
+        self.assertEqual(saved['skills']['catalogue']['origin'],'asemic');self.assertEqual(saved['skills']['blender']['origin'],'third_party')
         self.assertTrue(all(saved['directions']['assignments'].get(key) for key in self.inventory['skills']))
         self.assertTrue(o.migrate(self.data)['unchanged']);self.assertEqual(self.config.read_bytes(),self.before)
 
@@ -90,12 +90,12 @@ class ResourceTests(unittest.TestCase):
         saved=read_json(self.data/'user.json');self.assertEqual(saved['skills']['pdf']['notes'],['Сохранить мою заметку'])
         with self.assertRaises(directions.Conflict):o.change_skill(self.data,{'skill_id':'pdf','revision':before['revision'],'tags':['Другое'],'resource_ids':[]})
 
-    def test_inventory_project_gets_recommendations_without_false_runtime_claims(self):
+    def test_project_name_does_not_seed_owner_specific_recommendations(self):
         path=str(self.home/'Rea');self.inventory['projects']=[path]
         atomic_json(self.data/'inventory.json',self.inventory)
         o.migrate(self.data);saved=read_json(self.data/'user.json')
         links=saved[r.KEY]['bindings'][r.connections.project_id(path)]
-        self.assertEqual(set(links),{'resource:rea','resource:catalog','resource:github'})
+        self.assertEqual(links,{})
         self.assertTrue(all(x['role']=='recommended' and not x['confirmed'] for x in links.values()))
         self.assertNotIn(r.connections.project_id(path),saved['project_catalog']['projects'])
 

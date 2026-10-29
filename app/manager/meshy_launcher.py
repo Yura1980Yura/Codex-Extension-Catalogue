@@ -10,6 +10,7 @@ import threading
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/"skill-catalog/scripts"))
+from platform_paths import codex_dir
 import windows_credentials as vault
 
 
@@ -51,7 +52,7 @@ def child_job():
 
 
 def main():
-    base = Path.home()/".codex/service-connectors/meshy"
+    base = codex_dir()/"service-connectors/meshy"
     try:
         setup = json.loads((base/"connection.json").read_text("utf-8"))
         key = vault.read()

@@ -3,9 +3,15 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 
 def open_folder(folder):
+    if sys.platform != 'win32':
+        command = 'open' if sys.platform == 'darwin' else 'xdg-open'
+        try: subprocess.Popen([command, str(Path(folder).resolve())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError as error: raise ValueError('Не удалось открыть папку в файловом менеджере.') from error
+        return {'opened':True, 'foreground':None, 'confirmation':'Запуск файлового менеджера подтверждён; передний план отдельно не проверялся.'}
     powershell = Path(os.environ.get('WINDIR', r'C:\Windows'))/'System32/WindowsPowerShell/v1.0/powershell.exe'
     try:
         completed = subprocess.run(

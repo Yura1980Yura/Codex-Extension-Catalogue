@@ -1,7 +1,7 @@
 {
   "skill-catalog": {
     "title_ru": "Каталог навыков",
-    "origin": "third_party",
+    "origin": "asemic",
     "tasks": [
       "навыки",
       "поиск",
@@ -13,7 +13,11 @@
     "prepare": "Описание задачи; для обновления — доступ к локальным папкам",
     "dependencies": "Python 3.12+; для обнаружения — установленный Codex",
     "portability": "portable",
-    "origin_evidence": "Получен в передаваемом комплекте «Навыки»; это не собственная разработка получателя."
+    "origin_evidence": "Каталог и собственный навык разработаны Asemic.",
+    "source": {
+      "author": "Asemic",
+      "repository": "Yura1980Yura/Skills-Catalogue"
+    }
   },
   "reverse-engineer-anything": {
     "title_ru": "Разбор готовых программ — REA",

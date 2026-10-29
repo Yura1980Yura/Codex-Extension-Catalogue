@@ -1,5 +1,6 @@
 """Install an ordinary personal skill copy; preserve data and global instructions."""
 from __future__ import annotations
+from platform_paths import codex_dir
 
 import argparse
 from datetime import datetime, timezone
@@ -33,14 +34,14 @@ BLOCK = """
 
 def install(source=SKILL_ROOT, home=Path.home(), update_instructions=False):
     source, home = Path(source).resolve(), Path(home).resolve()
-    data = home / ".codex/skill-catalog"
+    data = codex_dir(home)/"skill-catalog"
     target = home / ".agents/skills/skill-catalog"
     if target.resolve() == source or target.is_symlink() or target.is_junction():
         raise ValueError("Expected an independent installation directory")
     with locked(data):
         read_events(data)  # Keep an unrecordable update from changing the installation.
         before = snapshot(target)
-        original = (home/".codex/AGENTS.md").read_bytes() if (home/".codex/AGENTS.md").exists() else b""
+        original = (codex_dir(home)/"AGENTS.md").read_bytes() if (codex_dir(home)/"AGENTS.md").exists() else b""
         if update_instructions and MARKER in original.decode("utf-8-sig"):
             if BLOCK.strip() not in original.decode("utf-8-sig"):
                 raise ValueError("Existing catalog instructions differ; review them instead of appending a duplicate")
@@ -81,7 +82,7 @@ def install(source=SKILL_ROOT, home=Path.home(), update_instructions=False):
                     backup.rename(target)
                 raise
             if update_instructions and MARKER not in original.decode("utf-8-sig"):
-                agents = home/".codex/AGENTS.md"
+                agents = codex_dir(home)/"AGENTS.md"
                 backups = data/"backups"
                 backups.mkdir(exist_ok=True)
                 saved = backups/f"AGENTS-{hashlib.sha256(original).hexdigest()[:16]}.md"
@@ -118,5 +119,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     result = install(home=args.home, update_instructions=args.update_instructions)
     from exporter import automatic_export
-    result["documentation_export"] = automatic_export(args.home/".codex/skill-catalog")
+    result["documentation_export"] = automatic_export(codex_dir(args.home)/"skill-catalog")
     print(json.dumps(result, ensure_ascii=False, indent=2))

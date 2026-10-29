@@ -3,6 +3,7 @@
 Browser input never supplies a path or configuration key. The snapshot identifies
 the component; the actual user config supplies its current state and revision.
 """
+from runtime_paths import codex_dir
 from copy import deepcopy
 import hashlib
 import json
@@ -21,7 +22,7 @@ class Conflict(ControlError): pass
 class Controls:
     def __init__(self, settings, work, request=None):
         self.home = Path(settings.get('home') or Path.home()).resolve()
-        self.source = Path(settings.get('source_data') or self.home/'.codex/skill-catalog').resolve()
+        self.source = Path(settings.get('source_data') or codex_dir(self.home)/'skill-catalog').resolve()
         self.work = Path(work)
         runtime = runtime_path(settings)
         sys.path[:0] = [str(runtime/'skill-catalog/scripts')]
@@ -35,7 +36,7 @@ class Controls:
 
     def rpc(self, method, params):
         return self.request(method, params, explicit=self.explicit,
-            codex_home=self.home/'.codex', process_cwd=str(self.home), timeout=25)[0]
+            codex_home=codex_dir(self.home), process_cwd=str(self.home), timeout=25)[0]
 
     def descriptor(self, addon, component, facts, config):
         disabled = lambda message: {'supported':False,'message':message}
@@ -75,7 +76,7 @@ class Controls:
         snapshot = deepcopy(snapshot)
         try: config = self.activation.configuration(self.home)
         except (OSError,ValueError): config = None
-        config_path = self.home/'.codex/config.toml'
+        config_path = codex_dir(self.home)/'config.toml'
         changed_at = config_path.stat().st_mtime*1000 if config_path.exists() else 0
         try: inventory = read(self.source/'inventory.json',{}).get('skills',{})
         except (OSError,ValueError): inventory = {}
@@ -162,7 +163,7 @@ class Controls:
                 except Exception: raise ControlError('Не удалось подтвердить переключение навыка. Состояние перечитано; повторите после проверки.') from None
             # Ask Codex for its own version immediately before the compare-and-swap.
             response = self.rpc('config/read',{'includeLayers':True,'cwd':str(self.home)})
-            layer = next((x for x in response.get('layers',[]) if x['name'].get('type')=='user' and not x['name'].get('profile') and Path(x['name']['file']).resolve()==self.home/'.codex/config.toml'),None)
+            layer = next((x for x in response.get('layers',[]) if x['name'].get('type')=='user' and not x['name'].get('profile') and Path(x['name']['file']).resolve()==codex_dir(self.home)/'config.toml'),None)
             _,_,again = self.resolve(snapshot,payload)
             if again['revision']!=control['revision'] or not layer or not layer.get('version'):
                 raise Conflict('Конфигурация изменилась или её версия не подтверждена. Обновите состояние.')
@@ -173,7 +174,7 @@ class Controls:
             verification = 'config_readback'
             try:
                 result = self.rpc('config/value/write',{'keyPath':control['key'],'value':payload['enabled'],'mergeStrategy':'upsert',
-                    'expectedVersion':layer['version'],'filePath':str(self.home/'.codex/config.toml')})
+                    'expectedVersion':layer['version'],'filePath':str(codex_dir(self.home)/'config.toml')})
                 effective = self.rpc('config/read',{'includeLayers':False,'cwd':str(self.home)})
                 value = effective['config'].get(control['field'],{}).get(control['name'],{}).get('enabled')
                 verification = 'codex_config_read' if value is payload['enabled'] and result.get('status')=='ok' else 'overridden'

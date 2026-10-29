@@ -47,4 +47,35 @@ class Composition(unittest.TestCase):
         result=build([s],{},[],[],installation)
         self.assertFalse(any(c.get('installed') for c in result[0]['components']))
 
+    def test_junction_target_discovery_confirms_global_installation(self):
+        s=skill('linked')
+        alias=Path('/user/.codex/skills/linked/SKILL.md')
+        target=Path('/projects/example/skills/linked/SKILL.md')
+        s['locations']=[{'path':str(alias),'resolved_path':str(target)}]
+        observed={'kind':'discovery','path':str(target),'enabled':True}
+        s['observations']=[observed]
+        entry={'kind':'user','present':True,'installation_path':str(alias.parent),'project_path':''}
+        result=build([s],{},[],[],lambda _: {'entries':[entry]})
+        component=result[0]['components'][0]
+        self.assertEqual(component['observations'],[observed])
+        self.assertEqual(component['scope'],'global')
+        self.assertTrue(component['installed'])
+        self.assertTrue(component['enabled'])
+        self.assertEqual(component['path'],str(alias))
+
+    def test_discovery_does_not_confirm_another_copy_with_the_same_name(self):
+        alias=Path('/user/.codex/skills/test/SKILL.md')
+        target=Path('/projects/example/skills/test/SKILL.md')
+        other=Path('/projects/other/skills/test/SKILL.md')
+        for resolved in (None,str(target)):
+            with self.subTest(resolved_path=resolved):
+                s=skill()
+                s['locations']=[{'path':str(alias),'resolved_path':resolved}]
+                observed={'kind':'discovery','path':str(alias),'enabled':True}
+                unrelated={'kind':'discovery','path':str(other),'enabled':False}
+                s['observations']=[observed,unrelated]
+                entry={'kind':'user','present':True,'installation_path':str(alias.parent),'project_path':''}
+                result=build([s],{},[],[],lambda _: {'entries':[entry]})
+                self.assertEqual(result[0]['components'][0]['observations'],[observed])
+
 if __name__=='__main__':unittest.main()

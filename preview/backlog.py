@@ -1,4 +1,5 @@
 """One backlog: reuse the existing Markdown cards and recoverable writer."""
+from runtime_paths import codex_dir
 import hashlib
 import json
 import re
@@ -16,7 +17,7 @@ class Backlog:
     def __init__(self, settings, work):
         self.settings, self.work = settings, Path(work)
         home = Path(settings.get('home') or Path.home()).resolve()
-        self.source = Path(settings.get('source_data') or home/'.codex/skill-catalog').resolve()
+        self.source = Path(settings.get('source_data') or codex_dir(home)/'skill-catalog').resolve()
         runtime = runtime_path(settings)
         manager_root = ROOT/'app/manager' if (ROOT/'app/manager/service.py').is_file() else runtime/'manager'
         sys.path[:0] = [str(manager_root), str(runtime/'skill-catalog/scripts')]

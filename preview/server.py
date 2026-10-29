@@ -1,5 +1,6 @@
 """Current catalogue: read Codex, keep personal annotations separate from facts."""
 from __future__ import annotations
+from runtime_paths import codex_dir
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -46,7 +47,7 @@ def write(path, value):
 class Preview:
     def __init__(self, settings, work):
         self.settings, self.work = settings, Path(work).resolve()
-        source = Path(settings.get('source_data') or Path.home()/'.codex/skill-catalog').resolve()
+        source = Path(settings.get('source_data') or codex_dir()/'skill-catalog').resolve()
         if self.work == source or self.work.is_relative_to(source) or source.is_relative_to(self.work):
             raise ValueError('Пробные записи должны храниться отдельно от рабочего каталога.')
         self.lock = threading.Lock()

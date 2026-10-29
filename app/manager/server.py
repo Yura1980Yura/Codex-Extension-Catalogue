@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/"skill-catalog/scripts"))
+from platform_paths import codex_dir
 from storage import atomic_json, read_json
 from service import Conflict, Manager, digest
 from connections import meshy_plan
@@ -140,7 +141,7 @@ def make_server(service, port=8768):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path.home()/".codex/skill-catalog")
+    parser.add_argument("--data-dir", type=Path, default=codex_dir()/"skill-catalog")
     parser.add_argument("--docs-root", type=Path)
     parser.add_argument("--home", type=Path, default=Path.home())
     parser.add_argument("--port", type=int, default=8768)
