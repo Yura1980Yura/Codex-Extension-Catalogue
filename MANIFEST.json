@@ -1,10 +1,10 @@
 {
-  "bundle_id": "d3ec6211d83f2ee730c6ed02324410aef212c7b4c6c87d42e29c84d5a896d791",
+  "bundle_id": "5f651a593f412aa84c1b97b4660ab238d7d60c70785faafd36413363a53c9e69",
   "date": "2026-10-29",
   "source_revision": "v3.6.0",
   "files": {
     ".gitattributes": "18a568e4dc66906d54585f3484e26d80c19d488f48fe4c52461ed889e4d57527",
-    ".github/workflows/checks.yml": "01fbd93e63dd74a32140a07f98402e200899411c3306fbb89a73d41844037874",
+    ".github/workflows/checks.yml": "244e1ddfda431430f1204dc7d4d813f8526b6e65f421671f9673241181a219d5",
     ".gitignore": "4d5e18242bdbae995d6a8a00c471b0fccb52c192bc78766e365e6a0386c45201",
     "1-Начните-здесь.txt": "66b643dfc229e7560b1fa361f193a82f0f114660aef94ad5b154918effa3a36f",
     "2-Промпт-для-Codex.txt": "6d98726d97821108fff7d5fc386fd62c5c1bfe3ca8a43e4894e8b0d8759ee372",
@@ -65,7 +65,7 @@
     "assets/asemic.png": "d0196d8fc9a52d04fb813b61299262782f370ff5e6a515f2fa141e59082301d7",
     "assets/asemic.svg": "dddb6b31821dcc00627261991e3a7408dfb8f215d188b2ffb9acdc6be288fd25",
     "CHANGELOG.md": "6a70f52e2220404716adaea81e84ff2882b5a599b077a769c5c8babd69a7bc63",
-    "deployment.py": "094f24fe3aa822d1050b23658582e91ef3bd69d756ae0e9298e7a45a6bf1922e",
+    "deployment.py": "c997afe95f8f13eb2b186b3793092c40855f7c22ccc8ab8859113dcf3ecc9e8d",
     "docs/legacy-v2/1-Начните-здесь.txt": "c95348c9d8cd13bbfa6a9c4e11f18a799ab54e0ae41bb30f0be5c3dd8bc052d6",
     "docs/legacy-v2/2-Промпт-для-Codex.txt": "9aac27c575c1c300d8f6f18fdd943f7c9ec555b0d0cf68e68113c932a259a658",
     "docs/legacy-v2/3-Возможности-и-ограничения.md": "5ad59d54c7daacef69079da06c5113a05bceb9a3881f506cde890a96d4751924",
@@ -153,7 +153,7 @@
     "START-CODEX.txt": "ba50c93dae80c5b7890f4210015714de136903b41ea0dc4dde717bf06ee0fb70",
     "tests/test_connection_state.py": "1ea47586d59230dcebb300ccea9d88d4c2c854a3eaf652caf01b82d42eb4802a",
     "tests/test_connections.py": "dc07ab2ff0ce7c222eea77dbcfeceffb35816f049cefb637f09850c8261b9250",
-    "tests/test_deployment.py": "5d2eef071b530ab04947a2a840fdfe688c9e9b2fa5a2da6af94fd97f614191eb",
+    "tests/test_deployment.py": "67a3301eca47754c4044aa1f721fe49018b1fa0a8e4b370372dcba3afd4b7d3b",
     "tests/test_meshy_setup.py": "2d2200b7c7029494ec53015051abac4aca42dfed5f81af8e2b03af7676bde944",
     "tests/test_resources.py": "a2e5758a5d0de5b74e4f430d797ca0c7d2a4e7c6bbd28127ed9d6ba443ec3d29",
     "Инструкция.html": "d5e8bafeb2bc61da03f9212c6f541c454e6a78335acd24a3061369dc81948247"

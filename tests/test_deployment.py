@@ -16,7 +16,7 @@ import deployment as d
 class Deployment(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory(prefix='asemic-test-')
-        self.home=Path(self.tmp.name)/'пользователь с пробелом';self.home.mkdir()
+        self.home=(Path(self.tmp.name)/'пользователь с пробелом').resolve();self.home.mkdir()
     def tearDown(self):self.tmp.cleanup()
 
     def install(self):return d.install(ROOT,home=self.home,offline=True)
