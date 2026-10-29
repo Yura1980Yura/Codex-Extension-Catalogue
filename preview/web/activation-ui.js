@@ -14,3 +14,12 @@ export function controlContextNote(c){
  return c.state_note||(typeof c.enabled==='boolean'&&c.enabled!==c.control.enabled?`В этом проекте: ${c.enabled?'включено':'отключено'}. Его действующая настройка отличается от общей.`:'');
 }
 export const controlGuidance='Глобально · на этом компьютере. После изменения перезапустите Codex. Уже прочитанные инструкции остаются в истории открытого чата.';
+
+export function tileControlsHTML(parts,esc,context='all'){
+ const available=parts.filter(c=>c.control?.supported);
+ if(!available.length)return '';
+ const kinds={skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение'};
+ const row=c=>`<div class="tile-control-row"><div class="tile-control-label">${available.length>1?`<span class="badge ${c.kind}">${kinds[c.kind]||'Часть'}</span><strong>${esc(c.title||c.name)}</strong>`:`<span>${parts.length===1?'В Codex':kinds[c.kind]||'Часть'}</span>`}<small>Глобально</small></div>${switchHTML(c,esc,context)}</div>${controlContextNote(c)?`<p class="tile-control-note">${esc(controlContextNote(c))}</p>`:''}`;
+ const hint='Настройка Codex на этом компьютере. После изменения перезапустите Codex.';
+ return `<div class="tile-controls" title="${hint}">${available.length===1?row(available[0]):`<details class="tile-control-menu"><summary>Включение частей <span>${available.length}</span><span class="tile-control-chevron" aria-hidden="true">⌄</span></summary><div class="tile-control-options">${available.map(row).join('')}<p class="tile-control-note">${hint}</p></div></details>`}<p class="tile-control-result" role="status" aria-live="polite"></p></div>`;
+}

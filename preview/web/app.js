@@ -1,5 +1,5 @@
 import {renderGuide} from './guide.js';
-import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote} from './activation-ui.js';
+import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML} from './activation-ui.js';
 import {renderBacklog} from './backlog.js';
 import {renderSettings,selectSettingsProject} from './settings.js';
 import {contentKey,pollDelay,preserveView} from './state.js';
@@ -55,7 +55,7 @@ function inventory(){
  const global=scope.filter(c=>c.some(x=>x.installed&&x.scope==='global')).length, local=scope.filter(c=>c.some(x=>x.installed&&x.scope==='local')).length;
  const scopeLabel=p?`<div class="project-actions"><button type="button" class="scope-label secondary" id="project-open" aria-label="Открыть папку проекта в Проводнике" title="${esc(p.file_path||p.path)}">${icon('folder')} Открыть папку</button><button class="quiet" id="project-folder-settings">Настройки проекта</button></div>`:`<span class="scope-label">${icon('globe').replace('<svg','<svg width="14" height="14"')} Этот компьютер</span>`;
  $('#main').innerHTML=heading(p?p.name:page==='favorites'?'Избранное':'Весь Codex',p?'Общие надстройки Codex и собственные надстройки этого проекта.':page==='favorites'?'То, что вы хотите держать под рукой.':'Все ваши надстройки: что установлено, из чего состоит и где работает.',scopeLabel)+(p?.available===false?'<div class="soft-note amber" role="status"><strong>Папка недоступна</strong><p>Проект зарегистрирован в Codex, но его папка не найдена или недоступна при последней сверке.</p><code>'+esc(p.path)+'</code></div>':'')+
- `<div class="overview-line"><span><span class="status-dot"></span><strong>${plural(installed,'надстройка установлена','надстройки установлены','надстроек установлено')}</strong></span><span>Глобально <strong>${global}</strong></span><span>Локально <strong>${local}</strong></span></div><section class="filters" aria-label="Фильтры надстроек"><div class="type-toolbar"><div class="type-row" role="group" aria-label="Состав надстройки"><button class="type-chip" data-type="all" aria-pressed="${!filters.types.length}">${icon('all')}Все типы</button>${Object.entries(typeNames).map(([k,v])=>`<button class="type-chip" data-type="${k}" aria-pressed="${filters.types.includes(k)}">${icon(k)}${v}<span data-count="${k}"></span></button>`).join('')}</div><button type="button" id="favorite-filter" class="type-chip favorite-filter" aria-pressed="${filters.favorite}" title="Только избранные надстройки в выбранном разделе">${icon('star')}Избранное<span id="favorite-count" aria-hidden="true"></span></button></div><div class="filter-row">${select('scope','Область',[['','Глобальные и локальные'],['global','Только глобальные'],['local','Только локальные'],['unknown','Не уточнена']])}${select('enabled','Включение',[['','Любое'],['on','Включено'],['off','Отключено'],['unknown','Не проверено']])}${select('direction','Назначение',[['','Все направления'],...data.directions.map(d=>[d.id,d.title])])}<label class="search">Найти по названию<input id="search" type="search" value="${esc(filters.query)}" placeholder="Например, Blender" aria-label="Найти по названию"></label><button id="more-filters" class="quiet filter-more" aria-expanded="false">${icon('filter')}Ещё фильтры</button></div><div class="filter-row advanced" id="advanced">${select('origin','Происхождение',[['','Любое'],...Object.entries(origins)])}${select('billing','Расходы',[['','Любые'],...Object.entries(bills)])}${select('tag','Тег',[['','Любой'],...[...new Set(data.addons.flatMap(a=>[...a.tags,...(data.overlay.items[a.id]?.tags||[])]))].sort().map(t=>[t,t])])}</div><p class="filter-hint" id="type-hint" hidden></p></section><div id="active-filters" class="active-filters"></div><div class="results-line"><span id="result-count" role="status" aria-live="polite"></span><div class="result-actions"><select id="sort" aria-label="Порядок карточек"><option value="custom">Мой порядок</option><option value="composition">Сначала составные</option><option value="name">По названию</option></select><button class="quiet" id="reset-filters">Сбросить фильтры</button></div></div><div class="grid" id="grid"></div>`;
+ `<div class="overview-line"><span><span class="status-dot"></span><strong>${plural(installed,'надстройка установлена','надстройки установлены','надстроек установлено')}</strong></span><span>Глобально <strong>${global}</strong></span><span>Локально <strong>${local}</strong></span></div><section class="filters" aria-label="Фильтры надстроек"><div class="type-toolbar"><div class="type-row" role="group" aria-label="Состав надстройки"><button class="type-chip" data-type="all" aria-pressed="${!filters.types.length}">${icon('all')}Все типы</button>${Object.entries(typeNames).map(([k,v])=>`<button class="type-chip" data-type="${k}" aria-pressed="${filters.types.includes(k)}">${icon(k)}${v}<span data-count="${k}"></span></button>`).join('')}</div><button type="button" id="favorite-filter" class="type-chip favorite-filter" aria-pressed="${filters.favorite}" title="Только избранные надстройки в выбранном разделе">${icon('star')}Избранное<span id="favorite-count" aria-hidden="true"></span></button></div><div class="filter-row">${select('scope','Область',[['','Глобальные и локальные'],['global','Только глобальные'],['local','Только локальные'],['unknown','Не уточнена']])}${select('enabled','Включение',[['','Любое'],['on','Включено'],['off','Отключено'],['unknown','Не проверено']])}${select('direction','Назначение',[['','Все направления'],...data.directions.map(d=>[d.id,d.title])])}<label class="search">Найти по названию<input id="search" type="search" value="${esc(filters.query)}" placeholder="Например, Blender" aria-label="Найти по названию"></label><button id="more-filters" class="quiet filter-more" aria-expanded="false">${icon('filter')}Ещё фильтры</button></div><div class="filter-row advanced" id="advanced">${select('origin','Происхождение',[['','Любое'],...Object.entries(origins)])}${select('billing','Расходы',[['','Любые'],...Object.entries(bills)])}${select('tag','Тег',[['','Любой'],...[...new Set(data.addons.flatMap(a=>[...a.tags,...(data.overlay.items[a.id]?.tags||[])]))].sort().map(t=>[t,t])])}</div><p class="filter-hint" id="type-hint" hidden></p></section><div id="active-filters" class="active-filters"></div><div class="results-line"><span id="result-count" tabindex="-1" role="status" aria-live="polite"></span><div class="result-actions"><select id="sort" aria-label="Порядок карточек"><option value="custom">Мой порядок</option><option value="composition">Сначала составные</option><option value="name">По названию</option></select><button class="quiet" id="reset-filters">Сбросить фильтры</button></div></div><div class="grid" id="grid"></div>`;
  $('#sort').value=sortMode; $('#sort').onchange=e=>{sortMode=e.target.value;localStorage.setItem('catalog-sort',sortMode);paintGrid();};
  $('#search').oninput=e=>{filters.query=e.target.value;paintGrid();};
  document.querySelectorAll('[data-filter]').forEach(el=>el.onchange=()=>{filters[el.dataset.filter]=el.value;paintGrid();});
@@ -75,6 +75,7 @@ function scopeHTML(parts){const kind=scopeKind(parts);return `<span class="scope
 function primaryKind(parts){return ['plugin','program','mcp','app','skill'].find(kind=>parts.some(c=>c.kind===kind))||'info';}
 function composition(parts){return Object.keys(typeNames).filter(k=>parts.some(p=>p.kind===k)).map(k=>{const n=parts.filter(p=>p.kind===k).length;return `<span class="badge ${k}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[k]}${n>1?' ×'+n:''}${parts.filter(p=>p.kind===k).every(p=>!p.installed)?' · не подтверждено':parts.some(p=>p.kind===k&&!p.installed)?' · есть непроверенные':''}</span>`;}).join('');}
 function paintGrid(){
+ const expanded=[...document.querySelectorAll('#grid .tile-control-menu[open]')].map(el=>el.closest('[data-addon]').dataset.addon);
  const rows=visible(data,filters).sort((a,b)=>(Number(b.overlay.favorite??b.addon.favorite)-Number(a.overlay.favorite??a.addon.favorite))||(sortMode==='composition'?new Set(b.parts.map(c=>c.kind)).size-new Set(a.parts.map(c=>c.kind)).size:0)||a.addon.title.localeCompare(b.addon.title,'ru'));
  const saved=data.overlay.orders?.[filters.project||'all']||[];if(sortMode==='custom')rows.sort((a,b)=>(saved.includes(a.addon.id)?saved.indexOf(a.addon.id):Infinity)-(saved.includes(b.addon.id)?saved.indexOf(b.addon.id):Infinity));
  $('#result-count').innerHTML=`<strong>${plural(rows.length,'надстройка','надстройки','надстроек')}</strong>${filters.types.length||filters.favorite?' по выбранным условиям':''}`;
@@ -87,10 +88,14 @@ function paintGrid(){
  const labels={scope:'Область',enabled:'Включение',presence:'Наличие',direction:'Назначение',origin:'Происхождение',tag:'Тег',billing:'Расходы'};
  $('#active-filters').innerHTML=Object.entries(labels).filter(([k])=>values(filters[k]).length&&!(k==='presence'&&filters[k]==='installed')).map(([k,v])=>`<button class="clear-chip" data-clear="${k}">${v}: ${esc($(`[data-filter="${k}"] option:checked`)?.textContent||$(`#value-${k}`)?.textContent||filters[k])} ×</button>`).join('');
  document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{filters[b.dataset.clear]=b.dataset.clear==='presence'?'installed':'';inventory();});
- $('#grid').innerHTML=rows.length?rows.map(({addon:a,parts,overlay,presence:found})=>{const s=status(parts),kind=primaryKind(parts);return `<article class="addon" data-addon="${esc(a.id)}"><div class="addon-head"><span class="addon-mark ${kind}">${icon(kind)}</span><button class="addon-name" data-open="${esc(a.id)}">${esc(a.title)}</button></div><button class="favorite" data-favorite="${esc(a.id)}" aria-label="В избранное: ${esc(a.title)}" aria-pressed="${overlay.favorite??a.favorite}">${icon('star')}</button><p class="addon-description">${esc(a.description||'Описание пока не подготовлено. Состав и источники доступны в карточке.')}</p><div class="composition">${composition(parts)||'<span class="badge">Есть описание подключения</span>'}</div><div class="addon-state-line ${s.key}">${esc(s.label)}</div><div class="addon-bottom">${scopeHTML(parts)}<span class="state ${found}">${found==='installed'?'Установлено':found==='unconfirmed'?'Не подтверждено':'Можно добавить'}</span></div>${sortMode==='custom'?`<div class="order-controls"><button class="drag-handle quiet" draggable="true" data-drag="${esc(a.id)}" aria-label="Переставить: ${esc(a.title)}" title="Перетащите на другую плитку, чтобы поменять их местами; Alt + стрелка вверх / вниз — обмен с соседней">⠿ <span>Переставить</span></button><button class="quiet order-up" data-move="${esc(a.id)}" data-step="-1" aria-label="Выше: ${esc(a.title)}">↑</button><button class="quiet order-down" data-move="${esc(a.id)}" data-step="1" aria-label="Ниже: ${esc(a.title)}">↓</button></div>`:''}${parts.some(c=>c.restriction)?'<div class="restriction">Есть ограничение по проекту</div>':''}</article>`;}).join(''):`<div class="empty"><h2>Нет надстроек с таким сочетанием</h2><p>Уберите одно условие или сбросьте фильтры.</p><button class="secondary" id="empty-reset">Сбросить фильтры</button></div>`;
+ $('#grid').innerHTML=rows.length?rows.map(({addon:a,parts,overlay,presence:found})=>{const s=status(parts),kind=primaryKind(parts);return `<article class="addon" data-addon="${esc(a.id)}"><div class="addon-head"><span class="addon-mark ${kind}">${icon(kind)}</span><button class="addon-name" data-open="${esc(a.id)}">${esc(a.title)}</button></div><button class="favorite" data-favorite="${esc(a.id)}" aria-label="В избранное: ${esc(a.title)}" aria-pressed="${overlay.favorite??a.favorite}">${icon('star')}</button><p class="addon-description">${esc(a.description||'Описание пока не подготовлено. Состав и источники доступны в карточке.')}</p><div class="composition">${composition(parts)||'<span class="badge">Есть описание подключения</span>'}</div><div class="addon-state-line ${s.key}">${esc(s.label)}</div><div class="addon-bottom">${scopeHTML(parts)}<span class="state ${found}">${found==='installed'?'Установлено':found==='unconfirmed'?'Не подтверждено':'Можно добавить'}</span></div>${tileControlsHTML(parts,esc,filters.project||'all')}${sortMode==='custom'?`<div class="order-controls"><button class="drag-handle quiet" draggable="true" data-drag="${esc(a.id)}" aria-label="Переставить: ${esc(a.title)}" title="Перетащите на другую плитку, чтобы поменять их местами; Alt + стрелка вверх / вниз — обмен с соседней">⠿ <span>Переставить</span></button><button class="quiet order-up" data-move="${esc(a.id)}" data-step="-1" aria-label="Выше: ${esc(a.title)}">↑</button><button class="quiet order-down" data-move="${esc(a.id)}" data-step="1" aria-label="Ниже: ${esc(a.title)}">↓</button></div>`:''}${parts.some(c=>c.restriction)?'<div class="restriction">Есть ограничение по проекту</div>':''}</article>`;}).join(''):`<div class="empty"><h2>Нет надстроек с таким сочетанием</h2><p>Уберите одно условие или сбросьте фильтры.</p><button class="secondary" id="empty-reset">Сбросить фильтры</button></div>`;
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openAddon(b.dataset.open));
  document.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>save(b.dataset.favorite,'favorite',{value:b.getAttribute('aria-pressed')!=='true'}).catch(e=>toast(e.message)));
- bindOrdering(rows);
+ document.querySelectorAll('#grid .tile-control-menu').forEach(el=>{
+  if(expanded.includes(el.closest('[data-addon]').dataset.addon))el.open=true;
+  el.addEventListener('toggle',()=>{if(el.isConnected&&el.open)document.querySelectorAll('#grid .tile-control-menu').forEach(other=>{if(other!==el)other.open=false;});});
+ });
+ bindControls();bindOrdering(rows);
  if($('#empty-reset'))$('#empty-reset').onclick=()=>$('#reset-filters').click();
 }
 function section(title,body){return body?`<section class="section"><h2>${esc(title)}</h2>${body}</section>`:'';}
@@ -115,28 +120,38 @@ function controlsHTML(parts){
  return section('Использовать в Codex',`${available.map(c=>controlHTML(c)).join('')||'<p class="tiny">Управление этими частями доступно в настройках Codex. Причина указана во вкладке «Состав».</p>'}${available.length?'<p class="tiny">Изменение сохраняется в настройках на этом компьютере и в истории. Перезапустите Codex, чтобы открытые чаты получили новое состояние. Настройки отдельных проектов могут иметь приоритет.</p>':''}<p class="control-result" role="status"></p>`);
 }
 function bindControls(){
- document.querySelectorAll('[data-activation]').forEach(button=>button.onclick=async()=>{
+ document.querySelectorAll('[data-activation]').forEach(button=>{button.disabled=switching;button.onclick=async()=>{
   if(switching){toast('Дождитесь сохранения текущего переключения.');return;}
-  const id=selected,tab=detailTab,restoreFocus=document.activeElement===button;
+  const tile=button.closest('[data-addon]'),id=tile?.dataset.addon||selected,tab=detailTab,view=location.hash,hadFocus=document.activeElement===button;
+  const componentId=button.dataset.activation,context=button.dataset.context;
   const addon=data.addons.find(a=>a.id===id);
+  if(!addon)return;
   const component=componentsFor(addon,project()).find(c=>c.id===button.dataset.activation&&(c.contextId||filters.project||'all')===button.dataset.context);
   if(!component?.control?.supported)return;
   switching=true;stateEpoch++;
   const buttons=[...document.querySelectorAll('[data-activation]')];buttons.forEach(b=>b.disabled=true);button.setAttribute('aria-busy','true');
-  const target=$('.control-result');if(target)target.textContent='Сохраняем настройку в Codex…';
+  const target=tile?.querySelector('.tile-control-result')||$('#details .control-result');if(target)target.textContent='Сохраняем в Codex…';
   let message='';
   try{
-   const response=await api('activation',{id,component_id:component.id,context:button.dataset.context,enabled:!component.control.enabled,revision:component.control.revision});
+   const response=await api('activation',{id,component_id:component.id,context,enabled:!component.control.enabled,revision:component.control.revision});
    data=response.state;
    message=response.result.unchanged?'Настройка уже имеет это значение.':response.result.warning||'Сохранено в Codex и истории. Требуется перезапуск Codex.';
   }catch(error){message=error.message;try{data=await api('state');}catch{/* Keep the last confirmed state; no optimistic switch. */}}
   finally{
+   const restoreFocus=hadFocus&&view===location.hash&&(document.activeElement===button||document.activeElement===document.body);
    switching=false;stateEpoch++;clearTimeout(poll);
    if(['all','project','favorites'].includes(page))paintGrid();
-   if($('#details').open&&selected===id){openAddon(id,tab);const result=$('.control-result');if(result)result.textContent=message;if(restoreFocus)Array.from(document.querySelectorAll('[data-activation]')).find(b=>b.dataset.activation===button.dataset.activation&&b.dataset.context===button.dataset.context)?.focus();}
-   buttons.forEach(b=>b.disabled=false);toast(message);
+   if($('#details').open&&selected===id){openAddon(id,tab);const result=$('#details .control-result');if(result)result.textContent=message;}
+   const newTile=[...document.querySelectorAll('#grid [data-addon]')].find(el=>el.dataset.addon===id);
+   if(tile&&view===location.hash){const result=newTile?.querySelector('.tile-control-result');if(result)result.textContent=message;}
+   if(restoreFocus){
+    const host=tile?newTile:$('#details');
+    const next=[...host?.querySelectorAll('[data-activation]')||[]].find(b=>b.dataset.activation===componentId&&b.dataset.context===context);
+    (next||newTile?.querySelector('[data-open]')||$('#result-count'))?.focus({preventScroll:true});
+   }
+   buttons.forEach(b=>{b.disabled=false;b.removeAttribute('aria-busy');});toast(message);
   }
- });
+ };});
 }
 function overviewHTML(a,parts){
  const profile=a.profile||{},overlay=data.overlay.items[a.id]||{};
@@ -293,8 +308,8 @@ for(const dialog of document.querySelectorAll('dialog')){
 function setMenu(open){$('#sidebar').classList.toggle('no-motion',lastInput==='keyboard');$('#sidebar').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',open);$('#sidebar-shade').hidden=!open;$('.workspace').inert=open&&matchMedia('(max-width:760px)').matches;if(open&&lastInput==='keyboard')$('#navigation a').focus();}
 window.addEventListener('resize',()=>{if(innerWidth>760&&$('#sidebar').classList.contains('open'))setMenu(false);});
 $('#sidebar-shade').onclick=()=>setMenu(false);
-document.addEventListener('click',e=>document.querySelectorAll('.multi[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.multi[open]');if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
+document.addEventListener('click',e=>document.querySelectorAll('.multi[open],.tile-control-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.multi[open],.tile-control-menu[open]');if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
 
 function fullOrder(rows){
  const saved=data.overlay.orders?.[filters.project||'all']||[];
