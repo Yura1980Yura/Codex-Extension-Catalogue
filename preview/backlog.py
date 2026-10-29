@@ -1,6 +1,7 @@
 """One backlog: reuse the existing Markdown cards and recoverable writer."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -61,12 +62,49 @@ class Backlog:
         return {'items': manager.wishes(), 'document': manager.document('backlog'),
                 'events': journal.read_events(self.source), 'path': str(manager.docs)}
 
+    def prompt(self, manager, key):
+        """Read one fresh card. Preparing a handoff never changes its state/history."""
+        if not isinstance(key, str) or not re.fullmatch(r'BK-\d{4}-\d{3,6}', key):
+            raise BacklogError('Выберите существующее пожелание.')
+        doc = manager.document(key)
+        text = doc['markdown'].replace('\r\n', '\n')
+        heading = re.search(r'^# (.+)$', text, re.M)
+        title = re.sub(r'^BK-\d+-\d+\s*[—–-]\s*', '', heading[1]) if heading else key
+        state = re.search(r'^- Состояние: (.+?)[.]?$', text, re.M)
+        state = state[1] if state else 'Не указано'
+        section = re.search(r'^## Исходная формулировка\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)
+        original = re.sub(r'^> ?', '', section[1], flags=re.M).strip() if section else ''
+        path = manager.document_path(key).resolve()
+        instructions = Path(__file__).with_name('WISHES-CODEX.md').resolve()
+        prompt = f'''Работай с существующим пожеланием {key} «{title}» из моего каталога навыков.
+
+Карточка: {path}
+Состояние при подготовке запроса: {state}.
+
+Исходное пожелание:
+{original or 'Прочитай формулировку в самой карточке: стандартный раздел в ней не найден.'}
+
+1. Прочитай свежую карточку целиком, включая прежние результаты и комментарии. Это существующая задача; новую карточку вместо неё не создавай. Если путь недоступен, найди мой каталог через skill-catalog и его папку документов. Сверь номер и название; если карточка недоступна, сообщи об этом, не создавая копию.
+2. Определи проект по карточке и контексту этого чата. Если нужный проект или ожидаемый результат неясен, уточни их. Если пожелание уже «Проверено», учти выполненное; не повторяй завершённую работу без нового поручения.
+3. Когда задача ясна и работа начинается, сохрани «В работе» через механизм каталога. Выполни поручение и необходимые проверки.
+4. Допиши в ЭТУ ЖЕ карточку датированный результат: что сделано, что проверено, ссылки на файлы и результаты, ограничения и оставшиеся шаги. Исходную формулировку и прежние комментарии сохрани. Поставь «Проверено» только по фактическому результату; незавершённую работу так и опиши.
+5. Обнови вместе карточку, строку общего бэклога и историю через существующее действие обновления пожелания. Перед записью перечитай свежую версию, чтобы сохранить чужие правки. Не ограничивайся ответом в чате. Проверь сохранение и сообщи мне номер карточки и результат.
+
+Порядок сохранения для Codex: {instructions}
+Рабочие данные каталога: {self.work}
+Исходные данные каталога: {self.source}
+'''
+        return {'id': key, 'title': title, 'state': state, 'revision': doc['revision'],
+                'path': str(path), 'prompt': prompt}
+
     def handle(self, payload):
         action = payload.get('action')
-        if action not in ('load', 'create', 'read', 'update'):
+        if action not in ('load', 'create', 'read', 'update', 'prompt'):
             raise BacklogError('Неизвестное действие с пожеланием.')
         try:
             manager = self.manager()
+            if action == 'prompt':
+                return self.prompt(manager, payload.get('id'))
             manager.recover()
             self.migrate(manager)
             if action == 'read':

@@ -1,3 +1,5 @@
+import {showWishPrompt} from './wish-prompt.js';
+
 const states=['Записано','Разбираем','В работе','Проверено','Отложено'];
 
 // Obsidian's alias separator is not a table column. Show readable labels in
@@ -15,13 +17,22 @@ export function renderBacklog(host,{api,esc,markdown,readPanel,acceptEvents,toas
  const root=host.querySelector('#backlog-root'),$=selector=>root.querySelector(selector);
  let current=null,request=null,busy=false;
  const alive=()=>host.querySelector('#backlog-root')===root;
+ const handoff=(id,scope)=>`<div class="wish-handoff"><div class="wish-handoff-actions"><button class="secondary" data-wish-prompt="${esc(id)}">Скопировать поручение для Codex</button><button class="icon-button wish-help-button" type="button" aria-label="Как передать пожелание ${esc(id)} в Codex" aria-expanded="false" aria-controls="wish-help-${scope}-${esc(id)}">?</button></div><p id="wish-help-${scope}-${esc(id)}" class="wish-help tiny" hidden>Откроется готовое поручение с номером этой карточки. Прочитайте его, скопируйте и отправьте в чат нужного проекта Codex. Поручение просит сохранить результат, проверки и оставшиеся шаги в этой же карточке, общем бэклоге и истории. Копирование ничего не запускает; после работы нажмите «Обновить список».</p></div>`;
+ function bindHandoff(container){
+  container.querySelectorAll('[data-wish-prompt]').forEach(button=>button.onclick=()=>showWishPrompt({document:host.ownerDocument,api,id:button.dataset.wishPrompt,isCurrent:alive}));
+  container.querySelectorAll('.wish-help-button').forEach(button=>button.onclick=()=>{
+   const shown=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!shown));
+   host.ownerDocument.getElementById(button.getAttribute('aria-controls')).hidden=shown;
+  });
+ }
  function accept(next){
   current=next;acceptEvents(next.events||[]);
   if(!alive())return;
   $('#backlog-document').disabled=false;
   $('#backlog-status').textContent=`${next.items.length} пожеланий · Общие документы с прежним каталогом`;
-  $('#backlog-list').innerHTML=next.items.map(w=>`<article class="page-note wish-card"><div><small>${esc(w.id)}</small><span class="wish-status" data-state="${esc(w.state)}">${esc(w.state)}</span></div><h2><button class="quiet" data-wish="${esc(w.id)}">${esc(w.title)}</button></h2><p>${esc(w.next_step)}</p><button class="secondary" data-wish="${esc(w.id)}">Открыть и дополнить</button></article>`).join('')||'<p class="page-note">Пока нет пожеланий. Запишите первую идею в форме выше.</p>';
+  $('#backlog-list').innerHTML=next.items.map(w=>`<article class="page-note wish-card"><div><small>${esc(w.id)}</small><span class="wish-status" data-state="${esc(w.state)}">${esc(w.state)}</span></div><h2><button class="quiet" data-wish="${esc(w.id)}">${esc(w.title)}</button></h2><p>${esc(w.next_step)}</p><button class="quiet" data-wish="${esc(w.id)}">Открыть и дополнить</button>${handoff(w.id,'list')}</article>`).join('')||'<p class="page-note">Пока нет пожеланий. Запишите первую идею в форме выше.</p>';
   root.querySelectorAll('[data-wish]').forEach(b=>b.onclick=()=>open(b.dataset.wish));
+  bindHandoff(root);
  }
  async function reload(){
   if(busy)return;busy=true;$('#backlog-refresh').disabled=true;
@@ -33,8 +44,9 @@ export function renderBacklog(host,{api,esc,markdown,readPanel,acceptEvents,toas
   try{
    const doc=await api('backlog',{action:'read',id});if(!alive())return;
    const row=current.items.find(x=>x.id===id);if(!row)return;
-   readPanel(row.title,`<p class="tiny">${esc(id)} · Исходная формулировка сохраняется</p>${documentHTML(doc.markdown)}<form class="note-form" id="wish-update"><h2>Дополнить пожелание</h2><label for="wish-state">Состояние</label><select id="wish-state">${states.map(s=>`<option ${s===row.state?'selected':''}>${s}</option>`).join('')}</select><label for="wish-step">Следующий шаг</label><input id="wish-step" required maxlength="400" value="${esc(row.next_step)}"><label for="wish-comment">Комментарий</label><textarea id="wish-comment" maxlength="20000" rows="3" placeholder="Что уточнили, решили или проверили"></textarea><p class="tiny">Для отметки «Проверено» опишите результат или укажите отчёт.</p><button class="primary" type="submit">Сохранить изменения</button><p class="error" role="alert"></p><p role="status" class="wish-saved"></p></form>`);
+   readPanel(row.title,`<p class="tiny">${esc(id)} · Исходная формулировка сохраняется</p>${handoff(id,'reader')}${documentHTML(doc.markdown)}<form class="note-form" id="wish-update"><h2>Дополнить пожелание</h2><label for="wish-state">Состояние</label><select id="wish-state">${states.map(s=>`<option ${s===row.state?'selected':''}>${s}</option>`).join('')}</select><label for="wish-step">Следующий шаг</label><input id="wish-step" required maxlength="400" value="${esc(row.next_step)}"><label for="wish-comment">Комментарий</label><textarea id="wish-comment" maxlength="20000" rows="3" placeholder="Что уточнили, решили или проверили"></textarea><p class="tiny">Для отметки «Проверено» опишите результат или укажите отчёт.</p><button class="primary" type="submit">Сохранить изменения</button><p class="error" role="alert"></p><p role="status" class="wish-saved"></p></form>`);
    const form=host.ownerDocument.querySelector('#wish-update');let revision=doc.revision;
+   bindHandoff(form.parentElement);
    form.onsubmit=async e=>{
     e.preventDefault();const b=form.querySelector('button');b.disabled=true;form.querySelector('.error').textContent='';
     try{

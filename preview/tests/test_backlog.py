@@ -58,6 +58,46 @@ class SharedBacklog(unittest.TestCase):
         with self.assertRaisesRegex(BacklogError,'опишите'):
             self.backlog.handle({'action':'update','id':row['id'],'revision':row['revision'],'state':'Проверено','comment':''})
 
+    def test_prompt_reads_fresh_card_without_changing_any_data(self):
+        row = self.backlog.handle(self.payload)['items'][0]
+        path = self.docs/'Бэклог'/f"{row['id']}.md"
+        path.write_text(path.read_text('utf-8').replace('Моя точная мысль', 'Новая точная мысль'), 'utf-8')
+        before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
+        value = self.backlog.handle({'action':'prompt','id':row['id']})
+        self.assertEqual(value['id'], row['id'])
+        self.assertEqual(value['path'], str(path.resolve()))
+        self.assertIn('Новая точная мысль\nс новой строкой', value['prompt'])
+        self.assertNotIn('Моя точная мысль', value['prompt'])
+        self.assertIn(str(self.work), value['prompt'])
+        self.assertIn('ту же карточку', value['prompt'].lower())
+        self.assertIn('историю', value['prompt'])
+        self.assertIn('WISHES-CODEX.md', value['prompt'])
+        self.assertEqual(before, {p:p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
+
+    def test_prompt_to_codex_update_keeps_one_card_and_history(self):
+        row = self.backlog.handle(self.payload)['items'][0]
+        handoff = self.backlog.handle({'action':'prompt','id':row['id']})
+        self.backlog.handle({'action':'update','id':handoff['id'],'revision':handoff['revision'],
+            'state':'В работе','comment':'Читаем задачу'})
+        fresh = self.backlog.handle({'action':'read','id':handoff['id']})
+        self.backlog.handle({'action':'update','id':handoff['id'],'revision':fresh['revision'],
+            'state':'Проверено','comment':'Выполнено и проверено','next_step':'Прочитать результат'})
+        done = self.backlog.handle({'action':'prompt','id':handoff['id']})
+        self.assertEqual(done['state'], 'Проверено')
+        self.assertIn('не повторяй завершённую работу', done['prompt'])
+        self.assertEqual(len(list((self.docs/'Бэклог').glob('BK-*.md'))),1)
+        self.assertEqual(self.index.read_text('utf-8').count('| Анимация кафе |'),1)
+        self.assertIn('Моя точная мысль', done['prompt'])
+        events=self.backlog.handle({'action':'load'})['events']
+        self.assertEqual([e['kind'] for e in events],['wish_created','wish_updated','wish_updated'])
+
+    def test_prompt_rejects_non_wish_documents_and_unavailable_cards(self):
+        for key in ('backlog', '../settings.json', 'journal', None):
+            with self.subTest(key=key), self.assertRaises(BacklogError):
+                self.backlog.handle({'action':'prompt','id':key})
+        with self.assertRaises(BacklogError):
+            self.backlog.handle({'action':'prompt','id':'BK-2026-999'})
+
     def test_old_browser_wishes_migrate_once_without_rewriting_overlay(self):
         write(self.work/'annotations.json', {'items':{'workspace':{'wishes':[{'text':'Старое пожелание','at':'2026-01-01'}]}}})
         original = (self.work/'annotations.json').read_bytes()
