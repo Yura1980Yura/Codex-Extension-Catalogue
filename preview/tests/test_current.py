@@ -36,6 +36,11 @@ class Current(unittest.TestCase):
         self.assertEqual(len(merged),1);self.assertEqual(merged[0]['name'],'Game');self.assertEqual(merged[0]['source'],'codex')
         self.assertEqual(merge_projects(merged, []), [])
         self.assertEqual(registry[0]['additional_folders'],['C:/other-access'])
+
+    def test_folder_request_does_not_invent_foreground_confirmation(self):
+        with patch('server.open_folder',return_value={'opened':True,'foreground':None,'confirmation':'launch only'}):
+            result=self.service.open_project({'id':'game'})
+        self.assertIsNone(result['foreground']);self.assertEqual(result['confirmation'],'launch only')
     def test_signature_detects_install_remove_and_rename_but_not_chat_activity(self):
         settings=self.service.settings
         a=signature(settings,self.work)

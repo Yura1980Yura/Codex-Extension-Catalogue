@@ -75,7 +75,8 @@ class Preview:
             raise ValueError('Папка файлов не найдена. Укажите её через «Изменить папку».')
         result = open_folder(path.resolve())
         write(self.work/'last-folder-open.json', {**result, 'project_id': project['id'], 'at': datetime.now(timezone.utc).isoformat()})
-        return {'opened': True, 'foreground': True}
+        return {'opened':result.get('opened',False),'foreground':result.get('foreground'),
+                'confirmation':result.get('confirmation')}
 
     def set_project_folder(self, payload):
         project = next((p for p in read(self.work/'snapshot.json', {}).get('projects', []) if p['id'] == payload.get('id')), None)

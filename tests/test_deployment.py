@@ -26,6 +26,11 @@ class Deployment(unittest.TestCase):
         instructions=profile/'AGENTS.md';instructions.write_text('Owner instructions','utf-8')
         result=self.install();runtime=Path(result['installed'])
         self.assertTrue(Path(result['launcher']).exists())
+        if sys.platform=='win32':
+            from windows_shortcut import inspect
+            link=inspect(result['launcher'])
+            self.assertTrue(Path(link['target']).is_file())
+            self.assertIn(str(runtime/'launch.py'),link['arguments'])
         self.assertEqual(instructions.read_text(),'Owner instructions')
         note=Path(result['notes'])/'Моё.md';note.write_text('Keep me','utf-8')
         overlay=Path(result['work'])/'annotations.json';d.write(overlay,{'custom':True})

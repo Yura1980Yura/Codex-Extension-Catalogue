@@ -115,16 +115,8 @@ def shortcut(runtime, desktop, platform=None):
     if platform=="win32":
         target=desktop/(NAME+".lnk")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
-        def ps(value):return "'"+str(value).replace("'","''")+"'"
-        script="$s=(New-Object -ComObject WScript.Shell).CreateShortcut("+ps(target)+");"
-        script+="$s.TargetPath="+ps(interpreter)+";$s.Arguments="+ps('-X utf8 -B "'+str(runtime/"launch.py")+'"')+";"
-        script+="$s.WorkingDirectory="+ps(runtime)+";$s.IconLocation="+ps(runtime/"assets/asemic.ico")+";$s.Save()"
-        import base64
-        encoded=base64.b64encode(script.encode('utf-16-le')).decode('ascii')
-        result=subprocess.run(["powershell.exe","-NoProfile","-NonInteractive","-WindowStyle","Hidden","-EncodedCommand",encoded],
-                              capture_output=True,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
-        if result.returncode:
-            raise ValueError('Не удалось создать ярлык: '+result.stderr.decode('utf-8','replace')[:3000])
+        from windows_shortcut import create
+        create(target,interpreter,'-X utf8 -B "'+str(runtime/'launch.py')+'"',runtime,runtime/'assets/asemic.ico')
     elif platform=="darwin":
         target=desktop/(NAME+".app")
         if target.exists(): raise ValueError("Ярлык уже существует: "+str(target))
