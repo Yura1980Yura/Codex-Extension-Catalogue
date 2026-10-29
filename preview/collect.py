@@ -145,7 +145,8 @@ def collect(settings, work):
                 loc = next((l for l in c.get('locations', []) if l.get('kind') != 'cache' and Path(l['path']).is_file()), None)
             if loc:
                 original = Path(loc['path']).read_text('utf-8-sig')
-                instructions[c['id']] = {'text': original, 'language': 'Оригинал', 'path': loc['path']}
+                instructions[c['id']] = {'text': original, 'language': 'Оригинал', 'path': loc['path'],
+                    'documents':catalog.skill_package.documents(loc['path'],c.get('documentation',[]))}
             try:
                 result = localization.read(c, home)
                 if result.get('markdown'):

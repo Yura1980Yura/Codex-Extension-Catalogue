@@ -1,3 +1,14 @@
+function invocationFor(addons,id){
+ const skills=addons.flatMap(a=>a.skills||[]),components=addons.flatMap(a=>a.components||[]);
+ const skill=skills.find(s=>s.id===id),component=components.find(c=>c.skill_id===id||c.name===id);
+ return skill?.default_prompt||`Используй навык $${skill?.name||component?.name||id} для моей задачи.`;
+}
+
+function documentationHTML(skills,esc){
+ const rows=skills.flatMap(s=>(s.documentation||[]).map(d=>`<button class="quiet" data-skill-document="${esc(s.id)}" data-document="${esc(d.id)}">${esc(d.title)}</button>`));
+ return rows.length?`<section class="detail-section"><h2>Документация навыка</h2><div class="links">${rows.join('')}</div></section>`:'';
+}
+
 import {renderGuide} from './guide.js';
 import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML,unavailableControlsHTML} from './activation-ui.js';
 import {renderBacklog} from './backlog.js';
@@ -106,7 +117,7 @@ function componentHTML(c,showControl=true){
  const enabled=c.enabled===true?'Включено':c.enabled===false?'Отключено':'Включение не проверено';
  const details=[c.path?`<p>Путь: <span class="path">${esc(c.path)}</span></p>`:'',c.version?`<p>Версия: ${esc(c.version)}</p>`:'',c.fingerprint?`<p>Отпечаток версии: <code>${esc(c.fingerprint)}</code></p>`:'',...(c.sources||[]).map(s=>`<p>${esc(s.scope)}: <span class="path">${esc(s.path)}</span>${s.applied?'':' (не применяется)'}</p>`)].join('');
  const seen=(c.observations||[]).filter(o=>o.kind==='session');
- return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${c.kind==='skill'?`<div class="links"><button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.name)}">Скопировать вызов</button></div>`:''}${showControl?controlHTML(c,true):''}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
+ return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${c.kind==='skill'?`<div class="links"><button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.skill_id)}">Скопировать вызов</button></div>`:''}${showControl?controlHTML(c,true):''}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
 }
 function controlHTML(c,explain=false){
  const control=c.control;
@@ -166,7 +177,7 @@ function overviewHTML(a,parts){
  for(const s of a.skills){
   html+=section(a.skills.length>1?s.title_ru||s.name:'Как помогает',textList(s.helps||s.description_ru||s.description_original||s.description));
   html+=(s.capability_groups||[]).map(g=>section(g.title,textList(g.text))).join('');
-  html+=section('Что получится',textList(s.output))+section('Когда выбирать',textList(s.choose_when))+section('Что подготовить',textList(s.prepare||s.dependencies));
+  html+=section('Что получится',textList(s.output))+section('Когда выбирать',textList(s.choose_when))+section('Что подготовить',textList(s.prepare))+section('Зависимости',textList(s.dependencies))+section('Автор и версия',textList(s.author_profile?.name)+textList(s.declared_version?'Версия '+s.declared_version:''));
   if(s.capability_limits)html+=`<div class="soft-note amber">${esc(s.capability_limits)}</div>`;
  }
  if(parts.some(c=>c.restriction))html+=`<div class="soft-note amber">${esc(parts.find(c=>c.restriction).restriction)}</div>`;
@@ -175,9 +186,9 @@ function overviewHTML(a,parts){
  const related=a.related.map(id=>data.addons.find(x=>x.id===id)).filter(Boolean);
  if(related.length)html+=section('Полезно вместе',`<p>Связанные возможности; они не входят автоматически в состав этой надстройки.</p><div class="links">${related.map(r=>`<button class="secondary" data-related="${esc(r.id)}">${esc(r.title)}</button>`).join('')}</div>`);
  html+=section('Теги',`<div class="tag-list">${[...new Set([...a.tags,...(overlay.tags||[])])].map(t=>`<span class="tag">${esc(t)}</span>`).join('')||'<span class="tiny">Пока нет тегов.</span>'}</div><form class="note-form" id="tags-form"><label for="tags-input">Мои дополнительные теги</label><input id="tags-input" value="${esc((overlay.tags||[]).join(', '))}" placeholder="Через запятую"><button class="secondary" type="submit">Сохранить теги</button><p class="error" role="alert"></p></form>`);
- return html;
+ return html+documentationHTML(a.skills||[],esc);
 }
-function sourcesHTML(a,parts){const p=a.profile||{};return sourceEvidenceHTML(parts)+section('Поставщик и документация',textList(p.provider)+textList(p.integration_author)+`<div class="links">${link(p.website,'Сайт')}${link(p.documentation,'Документация')}${link(p.connection_documentation,'Подключение')}</div>`)+section('Основание описания',textList(p.evidence))+a.skills.map(s=>section(s.title_ru||s.name,`<p>Автор: ${esc(s.author_profile?.name||'Не указан')}</p><div class="links">${(s.author_profile?.links||[]).map(l=>link(l.url,l.label)).join('')}</div>${textList(s.origin_evidence)}<p class="tiny">Русская инструкция: ${esc(s.instruction_localization?.message||'Нет сведений')}</p>`)).join('')+section('Как подключается',textList(p.connection_method)+textList(p.connection_requirements)+textList(p.connection_steps)+textList(p.reviewed_at?'Описание проверено: '+date(p.reviewed_at):''))+section('Границы проверки',`<p>Области и включение проверяются по настройкам. Успешное применение к задаче показывается только при наличии отдельной записи.</p><p>Каталог показывает настройки Codex. Подтверждённые личные навыки и пользовательские настройки MCP, плагинов и приложений можно включать и отключать в карточке. Личные и проектные навыки можно установить или удалить через действия с файлами. Доступ к аккаунтам и разрешения операций здесь не меняются.</p>`);}
+function sourcesHTML(a,parts){const p=a.profile||{};return documentationHTML(a.skills||[],esc)+sourceEvidenceHTML(parts)+section('Поставщик и документация',textList(p.provider)+textList(p.integration_author)+`<div class="links">${link(p.website,'Сайт')}${link(p.documentation,'Документация')}${link(p.connection_documentation,'Подключение')}</div>`)+section('Основание описания',textList(p.evidence))+a.skills.map(s=>section(s.title_ru||s.name,`<p>Автор: ${esc(s.author_profile?.name||'Не указан')}</p><div class="links">${(s.author_profile?.links||[]).map(l=>link(l.url,l.label)).join('')}</div>${textList(s.origin_evidence)}<p class="tiny">Русская инструкция: ${esc(s.instruction_localization?.message||'Нет сведений')}</p>`)).join('')+section('Как подключается',textList(p.connection_method)+textList(p.connection_requirements)+textList(p.connection_steps)+textList(p.reviewed_at?'Описание проверено: '+date(p.reviewed_at):''))+section('Границы проверки',`<p>Области и включение проверяются по настройкам. Успешное применение к задаче показывается только при наличии отдельной записи.</p><p>Каталог показывает настройки Codex. Подтверждённые личные навыки и пользовательские настройки MCP, плагинов и приложений можно включать и отключать в карточке. Личные и проектные навыки можно установить или удалить через действия с файлами. Доступ к аккаунтам и разрешения операций здесь не меняются.</p>`);}
 function notesHTML(a){const item=data.overlay.items[a.id]||{};return section('Мои заметки',`<div class="notes-list">${a.notes.map(n=>`<div class="note">${esc(n)}<small>Из прежнего каталога</small></div>`).join('')}${(item.notes||[]).map(n=>`<div class="note">${esc(n.text)}<small>${esc(date(n.at,true))} · новый вариант</small></div>`).join('')}${!a.notes.length&&!item.notes?.length?'<p>Здесь можно сохранить своё наблюдение об этой надстройке.</p>':''}</div>${noteForm('note','Новая заметка')}`)+section('Проверенный опыт',a.skills.flatMap(s=>(s.verified_experience||[]).map(e=>`<div class="note">${esc(e.task||'Применение')}<p>${esc(e.result||'')}</p><small>${esc(e.date||'')} ${esc(e.limitations||'')}</small></div>`)).join('')||'<p>Записанного опыта пока нет. Это не означает, что надстройку никогда не использовали.</p>')+section('Опыт других версий',textList(a.skills.flatMap(s=>(s.historical_experience||[]).map(e=>(e.task||'Применение')+' — '+(e.result||'')))))+section('История этой надстройки',eventsHTML(a));}
 function noteForm(action,label){return `<form class="note-form" data-note-action="${action}"><label for="note-text">${label}</label><textarea id="note-text" required maxlength="20000" placeholder="Ваш текст…"></textarea><div class="actions"><span class="tiny">Личная запись сохранится на этом компьютере.</span><button class="primary" type="submit">Сохранить ${action==='wish'?'пожелание':'заметку'}</button></div><p class="error" role="alert"></p></form>`;}
 function openAddon(id,tab='overview'){
@@ -274,13 +285,22 @@ function positionMulti(el){el.classList.remove('align-right');if(el.querySelecto
 window.addEventListener('resize',()=>document.querySelectorAll('.multi[open]').forEach(positionMulti));
 function instructionActions(parts){
  const skills=[...new Map(parts.filter(c=>c.kind==='skill'&&c.skill_id).map(c=>[c.skill_id,c])).values()];
- return skills.length?`<div class="instruction-actions" aria-label="Инструкции и вызовы">${skills.map(c=>`<div>${skills.length>1?`<strong>${esc(c.title||c.name)}</strong>`:''}<div class="links"><button class="secondary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.name)}">${icon('copy')}Скопировать вызов</button></div></div>`).join('')}</div>`:'';
+ return skills.length?`<div class="instruction-actions" aria-label="Инструкции и вызовы">${skills.map(c=>`<div>${skills.length>1?`<strong>${esc(c.title||c.name)}</strong>`:''}<div class="links"><button class="secondary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.skill_id)}">${icon('copy')}Скопировать вызов</button></div></div>`).join('')}</div>`:'';
 }
-async function copyInvocation(name){
- try{await navigator.clipboard.writeText('Используй навык $'+name+' для моей задачи.');toast('Вызов навыка скопирован.');}
+async function copyInvocation(id){
+ const name=data.addons.flatMap(a=>a.skills||[]).find(s=>s.id===id)?.name||id;
+ try{await navigator.clipboard.writeText(invocationFor(data.addons,id));toast('Вызов навыка скопирован.');}
  catch{toast('Копирование недоступно: используйте $'+name);}
 }
 function bindInstructionActions(){
+ document.querySelectorAll('[data-skill-document]').forEach(b=>b.onclick=async()=>{
+  try{
+   const i=await api('instruction?id='+encodeURIComponent(b.dataset.skillDocument)),doc=i.documents?.[b.dataset.document];
+   if(!doc)throw new Error('Документ недоступен. Выполните сверку с Codex.');
+   readPanel(doc.title,`<p class="tiny"><span class="path">${esc(doc.path)}</span></p>${markdown(doc.text)}`);
+   $('#reader-actions').innerHTML='';
+  }catch(e){toast(e.message);}
+ });
  document.querySelectorAll('[data-instruction]').forEach(b=>b.onclick=async()=>{
   try{
    const id=b.dataset.instruction,i=await api('instruction?id='+encodeURIComponent(id));
@@ -288,7 +308,7 @@ function bindInstructionActions(){
    const show=original=>{
     readPanel('Инструкция · '+(skill?.title||skill?.name||''),`<p class="tiny">${!original&&i.translation?'Русский текст, сверенный с оригиналом':'Оригинал'} · <span class="path">${esc(i.path)}</span></p>${markdown(!original&&i.translation?i.translation:i.text)}`);
     $('#reader-actions').innerHTML=`${i.translation?`<button class="quiet" id="instruction-language">${original?'Русский текст':'Оригинал'}</button>`:''}<button class="secondary" id="reader-copy">${icon('copy')}Скопировать вызов</button>`;
-    $('#reader-copy').onclick=()=>copyInvocation(skill?.name||id);
+    $('#reader-copy').onclick=()=>copyInvocation(id);
     if($('#instruction-language'))$('#instruction-language').onclick=()=>show(!original);
    };show(false);
   }catch(e){toast(e.message);}

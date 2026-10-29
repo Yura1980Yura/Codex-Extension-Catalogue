@@ -9,6 +9,7 @@ import authors
 import activation
 import localization
 import organization
+import skill_package
 from collections import Counter
 import hashlib
 import json
@@ -173,6 +174,7 @@ def refresh(directory, home, cwd, project_roots=(), session=None, discovery_fn=d
             for field in ("title_ru", "tasks", "helps", "output", "choose_when", "prepare", "dependencies", "portability", "origin", "origin_evidence", "source", "capability_groups", "capability_limits"):
                 if field in curated:
                     item[field] = curated[field]
+            item.update(skill_package.load(path,name))
             if vendor:
                 item.update(origin="third_party", origin_evidence="Проверенный writing-tools.lock.json", source=vendor, user_modified=vendor["user_modified"], portability="portable")
             elif plugin and plugin["market"] in ("openai-bundled", "openai-primary-runtime", "openai-curated-remote"):
@@ -301,6 +303,9 @@ def load_cards(directory, cwd=None, only_id=None):
             card["description"] = translated["description_ru"]
             if "title_ru" not in overlay:
                 card["title_ru"] = translated["title_ru"]
+        elif card.get('instruction_language')=='ru' and select_location(card,cwd or home):
+            card['description_ru']=card['description_original']
+            card['instruction_localization']={'status':'native','readable':True,'language':'ru','original_language':'ru','message':'Оригинал инструкции написан на русском языке.'}
         else:
             card["description"] = translation["message"]
         cards.append(card)
