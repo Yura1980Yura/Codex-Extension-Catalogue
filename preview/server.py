@@ -23,6 +23,8 @@ from collect import collect, read, ROOT, runtime_path
 from backlog import Backlog, BacklogError
 from controls import Controls, ControlError, Conflict
 from folder_window import open_folder
+from catalogue_fields import metadata, tags, addition_dates
+from source_locations import decorate as decorate_sources, folder as source_folder
 from project_folders import folder_key, file_folder, decorate_projects
 from skill_sources import change as change_sources, settings_view, SettingsError
 from skill_files import SkillFiles, SkillFileError, component as skill_component
@@ -173,7 +175,12 @@ class Preview:
             return {'loading': True, 'job': job}
         with self.lock:
             overlay = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
-        decorated = self.skill_files.decorate(self.controls.decorate(snapshot))
+        decorated = decorate_sources(self.skill_files.decorate(self.controls.decorate(snapshot)))
+        with self.lock:
+            dates = read(self.work/'added-dates.json', {})
+            inventory = read(self.controls.source/'inventory.json', {}).get('skills', {}) if not dates.get('initialized') else {}
+            if addition_dates(decorated.get('addons', []), dates, inventory, snapshot.get('updated_at')):
+                write(self.work/'added-dates.json', dates)
         return {**decorated, 'projects': decorate_projects(snapshot.get('projects', []), overlay),
                 'source_settings':settings_view(self.settings,snapshot.get('projects', []),overlay,snapshot),
                 'overlay': overlay, 'job': job, 'watch': self.watch_state,
@@ -208,6 +215,12 @@ class Preview:
         finally:
             self.refresh_lock.release()
 
+    def reveal_source(self, payload):
+        try:
+            return open_folder(source_folder(read(self.work/'snapshot.json', {}), payload))
+        except ValueError as error:
+            raise SkillFileError(str(error)) from error
+
     def reveal_skill(self, payload):
         c = skill_component(read(self.work/'snapshot.json', {}), payload)
         path = Path(c['path'])
@@ -240,12 +253,13 @@ class Preview:
 
     def annotate(self, payload):
         key = payload.get('id')
-        ids = {a['id'] for a in read(self.work/'snapshot.json', {}).get('addons', [])}
-        if key not in ids and key != 'workspace':
+        snapshot = read(self.work/'snapshot.json', {})
+        addon = next((a for a in snapshot.get('addons', []) if a['id'] == key), None)
+        if addon is None and key != 'workspace':
             raise ValueError('Надстройка не найдена. Обновите страницу.')
         action = payload.get('action')
-        if action not in ('note', 'favorite', 'tags'):
-            raise ValueError('Действие не поддерживается в пробном варианте.')
+        if action not in ('note', 'favorite', 'tags', 'metadata') or (key == 'workspace' and action != 'note'):
+            raise ValueError('Действие не поддерживается для этой записи.')
         with self.lock:
             data = read(self.work/'annotations.json', {'revision': 0, 'items': {}, 'events': []})
             if payload.get('revision') != data['revision']:
@@ -257,15 +271,21 @@ class Preview:
                     raise ValueError('Неверное значение избранного.')
                 item['favorite'] = payload['value']
                 value = payload['value']
+            elif action == 'metadata':
+                after = metadata(payload, snapshot.get('directions', []))
+                before = {k: item.get(k, addon.get({'origins':'origin','billings':'billing'}.get(k, k), [])) for k in after}
+                item.update(after)
+                value = {'before': before, 'after': after}
+            elif action == 'tags':
+                after = tags(payload.get('text'))
+                before = item.get('tags_override', list(dict.fromkeys([*addon.get('tags', []), *item.get('tags', [])])))
+                item['tags_override'] = after
+                value = {'before': before, 'after': after}
             else:
                 value = payload.get('text', '')
                 if not isinstance(value, str) or not value.strip() or len(value) > 20000:
-                    if not (action == 'tags' and value == ''):
-                        raise ValueError('Введите текст до 20 000 символов.')
-                if action == 'tags':
-                    item['tags'] = list(dict.fromkeys(t.strip() for t in value.split(',') if t.strip()))[:30]
-                else:
-                    item.setdefault('notes' if action == 'note' else 'wishes', []).append({'text': value.strip(), 'at': stamp})
+                    raise ValueError('Введите текст до 20 000 символов.')
+                item.setdefault('notes', []).append({'text': value.strip(), 'at': stamp})
             self.event(data, action, key, value)
             write(self.work/'annotations.json', data)
             return data
@@ -308,6 +328,7 @@ def make_server(service, port):
                 if parsed.path == '/api/activation': return self.send(service.activation(payload))
                 if parsed.path == '/api/skill-plan': return self.send(service.skill_plan(payload))
                 if parsed.path == '/api/skill-change': return self.send(service.skill_change(payload))
+                if parsed.path == '/api/reveal-source': return self.send(service.reveal_source(payload))
                 if parsed.path == '/api/reveal-skill': return self.send(service.reveal_skill(payload))
                 if parsed.path == '/api/shutdown':
                     self.send({'stopped': True})

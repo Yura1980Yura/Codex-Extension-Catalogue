@@ -54,6 +54,11 @@ class Isolation(unittest.TestCase):
     def test_foreign_origin_is_rejected(self):
         with self.assertRaises(urllib.error.HTTPError) as e:self.request('/api/state',headers={'Origin':'https://example.org'})
         self.assertEqual(e.exception.code,403)
+    def test_source_reveal_route_requires_a_known_source_and_local_origin(self):
+        for headers,status in [({},400),({'Origin':'https://example.org'},403),({'X-Catalog-Token':'wrong'},403)]:
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.request('/api/reveal-source',{'id':'sample','component_id':'foreign','source_id':'../../secret'},headers)
+            self.assertEqual(error.exception.code,status)
     def test_private_api_requires_token(self):
         with self.assertRaises(urllib.error.HTTPError) as e:urllib.request.urlopen(self.url+'/api/state')
         self.assertEqual(e.exception.code,403)
