@@ -48,4 +48,3 @@ class ExactSkillActivation(unittest.TestCase):
         self.control.change(snapshot,{'id':'a','component_id':'chosen','enabled':False,'revision':control['revision'],'path':str(self.paths[1])})
         self.assertFalse(self.control.activation.state(self.card,self.home,path=self.paths[0])['enabled'])
         self.assertTrue(self.control.activation.state(self.card,self.home,path=self.paths[1])['enabled'])
-
