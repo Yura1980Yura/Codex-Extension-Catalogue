@@ -1,15 +1,10 @@
-function invocationFor(addons,id){
- const skills=addons.flatMap(a=>a.skills||[]),components=addons.flatMap(a=>a.components||[]);
- const skill=skills.find(s=>s.id===id),component=components.find(c=>c.skill_id===id||c.name===id);
- return skill?.default_prompt||`Используй навык $${skill?.name||component?.name||id} для моей задачи.`;
-}
-
 function documentationHTML(skills,esc){
  const rows=skills.flatMap(s=>(s.documentation||[]).map(d=>`<button class="quiet" data-skill-document="${esc(s.id)}" data-document="${esc(d.id)}">${esc(d.title)}</button>`));
  return rows.length?`<section class="detail-section"><h2>Документация навыка</h2><div class="links">${rows.join('')}</div></section>`:'';
 }
 
 import {renderGuide} from './guide.js';
+import {invocationFor,callsFor,promptMenuHTML,bindPromptMenus} from './invocations.js';
 import {singleControl,switchHTML,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML,unavailableControlsHTML} from './activation-ui.js';
 import {renderBacklog} from './backlog.js';
 import {renderSettings,selectSettingsProject} from './settings.js';
@@ -117,7 +112,7 @@ function componentHTML(c,showControl=true){
  const enabled=c.enabled===true?'Включено':c.enabled===false?'Отключено':'Включение не проверено';
  const details=[c.path?`<p>Путь: <span class="path">${esc(c.path)}</span></p>`:'',c.version?`<p>Версия: ${esc(c.version)}</p>`:'',c.fingerprint?`<p>Отпечаток версии: <code>${esc(c.fingerprint)}</code></p>`:'',...(c.sources||[]).map(s=>`<p>${esc(s.scope)}: <span class="path">${esc(s.path)}</span>${s.applied?'':' (не применяется)'}</p>`)].join('');
  const seen=(c.observations||[]).filter(o=>o.kind==='session');
- return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${c.kind==='skill'?`<div class="links"><button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.skill_id)}">Скопировать вызов</button></div>`:''}${showControl?controlHTML(c,true):''}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
+ return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}<div class="component-invocations">${c.kind==='skill'?`<button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button>`:''}${promptMenuHTML(callsFor(data.addons.find(a=>a.components.some(part=>part.id===c.id))||{skills:[],title:c.title||c.name},[c],{skillId:c.kind==='skill'?c.skill_id:undefined}),esc)}</div>${showControl?controlHTML(c,true):''}${details?`<details><summary>Путь, версия и основание</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
 }
 function controlHTML(c,explain=false){
  const control=c.control;
@@ -169,13 +164,13 @@ function overviewHTML(a,parts){
  const meta=metadataFor(a,overlay);
  const purposes=meta.directions.map(id=>data.directions.find(d=>d.id===id)?.title||id);
  let html=`<div class="info-grid"><div class="info-cell"><small>Область</small>${scopeHTML(parts)}</div><div class="info-cell"><small>Происхождение</small>${esc(meta.origins.map(v=>origins[v]||v).join(', ')||'Не указано')}</div><div class="info-cell"><small>Назначение</small>${esc(purposes.join(', ')||'Пока не указано')}</div><div class="info-cell"><small>Расходы</small>${esc(meta.billings.map(v=>bills[v]||v).join(', ')||'Не указаны')}</div></div>`;
- html+=instructionActions(parts);
+ html+=instructionActions(parts,a);
  html+=`<p class="tiny">Добавлено в каталог: ${a.added_at?esc(date(a.added_at,true)):'дата не была сохранена'}</p>`+metadataEditor(meta);
  html+=sourceEvidenceHTML(parts);
  html+=skillFileTools(parts,esc);
  html+=controlsHTML(parts);
  if(profile.capabilities?.length)html+=section('Что умеет',textList(profile.capabilities));
- if(profile.example)html+=section('Пример команды в Codex',textList(profile.example)+'<button class="secondary" id="copy-example">Скопировать пример</button><p class="tiny">Копирование не запускает действие.</p>');
+ if(profile.example)html+=section('Примеры из карточки',promptMenuHTML(callsFor(a,parts,{examplesOnly:true}),esc));
  for(const s of a.skills){
   html+=section(a.skills.length>1?s.title_ru||s.name:'Как помогает',textList(s.helps||s.description_ru||s.description_original||s.description));
   html+=(s.capability_groups||[]).map(g=>section(g.title,textList(g.text))).join('');
@@ -202,7 +197,7 @@ function openAddon(id,tab='overview'){
  document.querySelectorAll('[data-related]').forEach(b=>b.onclick=()=>openAddon(b.dataset.related));
  bindInstructionActions();
  bindControls();
- if($('#copy-example'))$('#copy-example').onclick=async()=>{try{await navigator.clipboard.writeText(a.profile.example);toast('Пример скопирован.');}catch{toast('Не удалось скопировать. Пример приведён выше.');}};
+
  bindNotes(id);
  bindMetadata(id);bindSourceFolders(id);
  if($('#tags-form'))$('#tags-form').onsubmit=async e=>{e.preventDefault();try{await save(id,'tags',{text:$('#tags-input').value});}catch(error){$('#tags-form .error').textContent=error.message;}};
@@ -286,9 +281,9 @@ function updateMulti(field){
 }
 function positionMulti(el){el.classList.remove('align-right');if(el.querySelector('.multi-options').getBoundingClientRect().right>innerWidth-16)el.classList.add('align-right');}
 window.addEventListener('resize',()=>document.querySelectorAll('.multi[open]').forEach(positionMulti));
-function instructionActions(parts){
+function instructionActions(parts,addon){
  const skills=[...new Map(parts.filter(c=>c.kind==='skill'&&c.skill_id).map(c=>[c.skill_id,c])).values()];
- return skills.length?`<div class="instruction-actions" aria-label="Инструкции и вызовы">${skills.map(c=>`<div>${skills.length>1?`<strong>${esc(c.title||c.name)}</strong>`:''}<div class="links"><button class="secondary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию</button><button class="quiet" data-copy="${esc(c.skill_id)}">${icon('copy')}Скопировать вызов</button></div></div>`).join('')}</div>`:'';
+ return `<div class="instruction-actions" aria-label="Инструкции и вызовы"><div class="links">${skills.map(c=>`<button class="secondary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию${skills.length>1?' · '+esc(c.title||c.name):''}</button>`).join('')}</div>${promptMenuHTML(callsFor(addon,parts),esc)}</div>`;
 }
 async function copyInvocation(id){
  const name=data.addons.flatMap(a=>a.skills||[]).find(s=>s.id===id)?.name||id;
@@ -307,16 +302,16 @@ function bindInstructionActions(){
  document.querySelectorAll('[data-instruction]').forEach(b=>b.onclick=async()=>{
   try{
    const id=b.dataset.instruction,i=await api('instruction?id='+encodeURIComponent(id));
-   const skill=data.addons.flatMap(a=>a.components).find(c=>c.skill_id===id);
+   const skill=data.addons.flatMap(a=>componentsFor(a,project())).find(c=>c.skill_id===id);
    const show=original=>{
     readPanel('Инструкция · '+(skill?.title||skill?.name||''),`<p class="tiny">${!original&&i.translation?'Русский текст, сверенный с оригиналом':'Оригинал'} · <span class="path">${esc(i.path)}</span></p>${markdown(!original&&i.translation?i.translation:i.text)}`);
-    $('#reader-actions').innerHTML=`${i.translation?`<button class="quiet" id="instruction-language">${original?'Русский текст':'Оригинал'}</button>`:''}<button class="secondary" id="reader-copy">${icon('copy')}Скопировать вызов</button>`;
-    $('#reader-copy').onclick=()=>copyInvocation(id);
+    $('#reader-actions').innerHTML=`${i.translation?`<button class="quiet" id="instruction-language">${original?'Русский текст':'Оригинал'}</button>`:''}${promptMenuHTML(callsFor(data.addons.find(a=>a.skills?.some(s=>s.id===id))||{skills:[],title:skill?.title||skill?.name},[skill].filter(Boolean),{skillId:id}),esc)}`;
+    bindPromptMenus($('#reader-actions'),{copy:value=>navigator.clipboard.writeText(value),toast});
     if($('#instruction-language'))$('#instruction-language').onclick=()=>show(!original);
    };show(false);
   }catch(e){toast(e.message);}
  });
- document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyInvocation(b.dataset.copy));
+ bindPromptMenus($('#detail-content'),{copy:value=>navigator.clipboard.writeText(value),toast});
 }
 const immediateDialog=()=>lastInput==='keyboard'||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function showDialog(dialog){openNativeDialog(dialog,immediateDialog());}
@@ -331,8 +326,8 @@ for(const dialog of document.querySelectorAll('dialog')){
 function setMenu(open){$('#sidebar').classList.toggle('no-motion',lastInput==='keyboard');$('#sidebar').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',open);$('#sidebar-shade').hidden=!open;$('.workspace').inert=open&&matchMedia('(max-width:760px)').matches;if(open&&lastInput==='keyboard')$('#navigation a').focus();}
 window.addEventListener('resize',()=>{if(innerWidth>760&&$('#sidebar').classList.contains('open'))setMenu(false);});
 $('#sidebar-shade').onclick=()=>setMenu(false);
-document.addEventListener('click',e=>document.querySelectorAll('.multi[open],.tile-control-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.multi[open],.tile-control-menu[open]');if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
+document.addEventListener('click',e=>document.querySelectorAll('.invocation-menu[open],.multi[open],.tile-control-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.invocation-menu[open],.multi[open],.tile-control-menu[open]');if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
 
 function fullOrder(rows){
  const saved=data.overlay.orders?.[filters.project||'all']||[];

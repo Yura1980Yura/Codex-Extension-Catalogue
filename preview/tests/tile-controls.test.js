@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 import * as model from '../web/model.js';
 import * as activationUI from '../web/activation-ui.js';
+import * as invocationUI from '../web/invocations.js';
 
 const html=fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8');
 const source=fs.readFileSync(new URL('../web/app.js',import.meta.url),'utf8')
@@ -22,7 +23,7 @@ function fixture(t,{hash='#all',fail=false}={}){
   addons:[addon('design',[part('skill:design')]),addon('blender',[part('mcp:blender','mcp'),part('skill:blender')]),
    addon('pdf',[part('plugin:pdf','plugin'),part('skill:pdf','skill',false)]),addon('managed',[part('plugin:managed','plugin',false)])]};
  const requests=[];let finish;
- const ctx={...model,...activationUI,window:dom.window,document:dom.window.document,location:dom.window.location,
+ const ctx={...model,...activationUI,...invocationUI,window:dom.window,document:dom.window.document,location:dom.window.location,
   history:dom.window.history,localStorage:dom.window.localStorage,URLSearchParams,URL,AbortSignal,
   setTimeout:dom.window.setTimeout.bind(dom.window),clearTimeout:dom.window.clearTimeout.bind(dom.window),
   matchMedia:()=>({matches:false}),selectSettingsProject(){},renderGuide(){},

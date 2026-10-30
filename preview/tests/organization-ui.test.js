@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 import * as model from '../web/model.js';
 import * as activationUI from '../web/activation-ui.js';
+import * as invocationUI from '../web/invocations.js';
 import * as skillActions from '../web/skill-actions.js';
 
 const html=fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8');
@@ -14,7 +15,7 @@ function fixture(t,fail=false){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8772/#all'});t.after(()=>dom.window.close());dom.window.scrollTo=()=>{};
  const addon=(id,date)=>({id,title:id,description:id,added_at:date,origin:'builtin',billing:'included',tags:['initial','remove'],directions:['code'],skills:[],notes:[],related:[],bindings:[],components:[{id:'c-'+id,kind:'skill',name:id,installed:true,enabled:true,scope:'global',source_locations:[{id:'known',path:'C:/skills/example/SKILL.md',available:true,label:'Файл'}]}]});
  const snapshot={updated_at:'2026-10-30T12:00:00Z',addons:[addon('old','2026-10-20T12:00:00Z'),addon('new','2026-10-30T12:00:00Z')],projects:[{id:'zoo',name:'Zoo'}],directions:[{id:'code',title:'Код'},{id:'design',title:'Дизайн'}],overlay:{revision:4,items:{},events:[]},events:[]};
- const requests=[],ctx={...model,...activationUI,...skillActions,bindSkillFileTools(){},window:dom.window,document:dom.window.document,location:dom.window.location,history:dom.window.history,
+ const requests=[],ctx={...model,...activationUI,...invocationUI,...skillActions,bindSkillFileTools(){},window:dom.window,document:dom.window.document,location:dom.window.location,history:dom.window.history,
   localStorage:dom.window.localStorage,URLSearchParams,URL,AbortSignal,setTimeout:dom.window.setTimeout.bind(dom.window),clearTimeout:dom.window.clearTimeout.bind(dom.window),
   matchMedia:()=>({matches:true}),selectSettingsProject(){},renderGuide(){},openNativeDialog:dialog=>dialog.setAttribute('open',''),closeNativeDialog:dialog=>dialog.removeAttribute('open'),
   fetch:async(url,options)=>{

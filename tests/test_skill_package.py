@@ -46,5 +46,17 @@ class SkillPackage(unittest.TestCase):
         (self.skill/'catalog.json').write_text('{broken')
         self.assertIsInstance(skill_package.load(self.path,'example'),dict)
 
+    def test_multiple_prompts_are_read_as_text_and_keep_the_authors_default(self):
+        self.meta['prompts']=[{'title':'Подготовить план','text':'Используй $example: подготовь план.'},
+                              {'title':'Проверить результат','text':'Используй $example: проверь результат.'},
+                              {'title':'Дубль','text':'Используй $example: подготовь план.'},
+                              {'title':'bad','text':False}, {'title':'x'*161,'text':'bad'}]
+        self.save()
+        data=self.home/'.codex/skill-catalog'
+        catalog.refresh(data,self.home,str(self.home),discovery_fn=lambda cwds,explicit:{'data':[]})
+        _,cards=catalog.load_cards(data,str(self.home));card=next(c for c in cards if c['name']=='example')
+        self.assertEqual([p['title'] for p in card['prompts']],['Подготовить план','Проверить результат'])
+        self.assertEqual(card['default_prompt'],'Используй $example: подготовь согласованный план.')
+
 
 if __name__=='__main__':unittest.main()

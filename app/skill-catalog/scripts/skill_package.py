@@ -47,6 +47,15 @@ def load(instruction,name):
         if isinstance(raw.get('tasks'),list):result['tasks']=[t for t in raw['tasks'][:30] if isinstance(t,str) and len(t)<=160]
         if isinstance(raw.get('capability_groups'),list):
             result['capability_groups']=[{'title':g['title'],'text':g['text']} for g in raw['capability_groups'][:12] if isinstance(g,dict) and all(isinstance(g.get(k),str) and len(g[k])<=8000 for k in ('title','text'))]
+        if isinstance(raw.get('prompts'),list):
+            prompts=[]
+            for row in raw['prompts'][:24]:
+                if not isinstance(row,dict):continue
+                if not all(isinstance(row.get(k),str) and row[k].strip() for k in ('title','text')):continue
+                if len(row['title'])>160 or len(row['text'])>8000:continue
+                prompt={'title':row['title'].strip(),'text':row['text'].strip()}
+                if not any(p['text']==prompt['text'] for p in prompts):prompts.append(prompt)
+            if prompts:result['prompts']=prompts
         if isinstance(raw.get('version'),str) and len(raw['version'])<=80:result['declared_version']=raw['version']
         source=raw.get('source',{});source=source if isinstance(source,dict) else {};clean={}
         if isinstance(source.get('author'),str) and len(source['author'])<=160:clean['author']=source['author']

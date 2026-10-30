@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 import * as model from '../web/model.js';
 import * as activationUI from '../web/activation-ui.js';
+import * as invocationUI from '../web/invocations.js';
 
 // Load the actual page and handlers. No duplicate routing/filter implementation.
 const html=fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8');
@@ -25,7 +26,7 @@ function fixture(t,{hash='#all',stored='false'}={}){
   addons:[addon('global',[part('g')],true),addon('local-zoo',[part('z','skill','zoo')],true),
    addon('local-other',[part('o','skill','other')],true),addon('bundle',[part('bs'),part('bm','mcp')],true),
    addon('ordinary',[part('n')]),addon('excluded',[part('e')],true)]};
- const context={...model,...activationUI,window:dom.window,document:dom.window.document,location:dom.window.location,
+ const context={...model,...activationUI,...invocationUI,window:dom.window,document:dom.window.document,location:dom.window.location,
   history:dom.window.history,localStorage:dom.window.localStorage,URLSearchParams,URL,AbortSignal,
   setTimeout:dom.window.setTimeout.bind(dom.window),clearTimeout:dom.window.clearTimeout.bind(dom.window),
   matchMedia:()=>({matches:false}),selectSettingsProject(){},renderGuide(){},
