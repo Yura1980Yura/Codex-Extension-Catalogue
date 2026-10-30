@@ -6,7 +6,7 @@ import directions as transactions
 import journal as j
 from storage import locked, now, read_json
 
-ORIGINS = {"asemic": "Asemic", "builtin": "Встроенные и поставляемые OpenAI", "personal": "Мои разработки", "third_party": "Других авторов", "unknown": "Источник не уточнён"}
+ORIGINS = {"asemic": "55user3125", "builtin": "Встроенные и поставляемые OpenAI", "personal": "Мои разработки", "third_party": "Других авторов", "unknown": "Источник не уточнён"}
 Conflict = transactions.Conflict
 
 

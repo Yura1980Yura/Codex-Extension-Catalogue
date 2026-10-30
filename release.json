@@ -1,6 +1,6 @@
 {
   "name": "Codex Extension Catalogue",
-  "version": "3.8.1",
+  "version": "3.8.2",
   "status": "current",
   "date": "2026-10-30",
   "entry": "launch.py",
@@ -9,7 +9,7 @@
   "legacy_status": "retained_as_history",
   "repository": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
   "branch": "codex/catalog-v2",
-  "origin": "Asemic",
+  "origin": "55user3125",
   "name_ru": "Каталог надстроек Codex",
-  "developer": "Asemic"
+  "developer": "55user3125"
 }

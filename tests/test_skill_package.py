@@ -14,7 +14,7 @@ class SkillPackage(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.home=Path(self.tmp.name).resolve();self.skill=self.home/'.codex/skills/example';self.skill.mkdir(parents=True)
         self.path=self.skill/'SKILL.md';self.path.write_text('---\nname: example\ndescription: Русское назначение\n---\n# Инструкция\nПолный русский оригинал.','utf-8')
-        self.meta={'schema':1,'name':'example','instruction_language':'ru','helps':'Понятное описание','source':{'author':'Asemic','repository':'example/library','url':'https://github.com/example/library/tree/main/skills/example'},'documentation':[{'id':'README.md','title':'Назначение и запуск'}]}
+        self.meta={'schema':1,'name':'example','instruction_language':'ru','helps':'Понятное описание','source':{'author':'55user3125','repository':'example/library','url':'https://github.com/example/library/tree/main/skills/example'},'documentation':[{'id':'README.md','title':'Назначение и запуск'}]}
         (self.skill/'README.md').write_text('# Возможности\nДокументация','utf-8')
         (self.skill/'agents').mkdir()
         (self.skill/'agents/openai.yaml').write_text('interface:\n  display_name: "Начать проект"\n  default_prompt: "Используй $example: подготовь согласованный план."\n','utf-8')
@@ -26,7 +26,7 @@ class SkillPackage(unittest.TestCase):
         data=self.home/'.codex/skill-catalog'
         catalog.refresh(data,self.home,str(self.home),discovery_fn=discovery)
         _,cards=catalog.load_cards(data,str(self.home));card=next(c for c in cards if c['name']=='example')
-        self.assertEqual(card['title_ru'],'Начать проект');self.assertEqual(card['author_profile']['name'],'Asemic')
+        self.assertEqual(card['title_ru'],'Начать проект');self.assertEqual(card['author_profile']['name'],'55user3125')
         self.assertTrue(card['instruction_localization']['readable']);self.assertEqual(card['description'],'Русское назначение')
         self.assertIn('$example',card['default_prompt']);self.assertTrue(card['activation']['supported'])
         docs=skill_package.documents(self.path,card['documentation'])

@@ -1,7 +1,7 @@
 {
   "name": "Codex Extension Catalogue",
-  "version": "3.8.1",
-  "source_revision": "v3.8.1",
+  "version": "3.8.2",
+  "source_revision": "v3.8.2",
   "distribution": "Codex Extension Catalogue portable distribution",
   "local_update": {
     "date": "2026-10-27",
@@ -12,7 +12,7 @@
   },
   "source_repository": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
   "source_branch": "codex/catalog-v2",
-  "origin": "Asemic",
+  "origin": "55user3125",
   "name_ru": "Каталог надстроек Codex",
-  "developer": "Asemic"
+  "developer": "55user3125"
 }
