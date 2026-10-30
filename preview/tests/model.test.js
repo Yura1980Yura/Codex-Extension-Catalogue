@@ -1,11 +1,33 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {componentsFor,visible,presence,reorderIds} from '../web/model.js';
+import {componentsFor,localProjectsFor,visible,presence,reorderIds} from '../web/model.js';
 const global={id:'s1',kind:'skill',scope:'global',installed:true,enabled:true};
 const local={id:'s2',kind:'skill',scope:'local',project_path:'C:/projects/game',installed:true,enabled:true};
 const project={id:'game',path:'C:/projects/game'};
 const addon={id:'bundle',title:'Bundle',description:'',directions:[],tags:[],components:[global,local,{id:'m',kind:'mcp',scope:'global',installed:true,enabled:true}]};
 const data={projects:[project],addons:[addon],overlay:{items:{}}};
+
+test('local installation projects exclude inherited globals, findings and unrelated registrations',()=>{
+ const projects=[project,{id:'sibling',name:'Sibling',path:'C:/projects/game2'},{id:'other',name:'Other',path:'C:/other'}];
+ const x={components:[global,local,{...local,id:'found',installed:false,project_ids:['other']}]};
+ const rows=localProjectsFor(x,projects);
+ assert.deepEqual(rows.map(row=>row.project.id),['game']);
+ assert.deepEqual(rows[0].components.map(c=>c.id),[local.id]);
+ assert.deepEqual(localProjectsFor(x,projects.slice(1)),[]);
+});
+
+test('local context settings retain disabled installations without labeling global inheritance local',()=>{
+ const x={components:[{id:'m',kind:'mcp',contexts:{all:{scope:'global',installed:true,enabled:true},game:{scope:'local',installed:true,enabled:false},other:{scope:'global',installed:true,enabled:true}}}]};
+ const rows=localProjectsFor(x,[project,{id:'other',path:'C:/other'}]);
+ assert.deepEqual(rows.map(row=>row.project.id),['game']);assert.equal(rows[0].components[0].enabled,false);
+});
+
+test('local installation list follows updated project names and ids, not saved catalogue bindings',()=>{
+ const x={components:[{id:'s',scope:'local',installed:true,project_ids:['game','other']}],bindings:[{project_name:'Stale'}]};
+ const projects=[{...project,name:'Renamed'},{id:'other',name:'Other',available:false}];
+ assert.deepEqual(localProjectsFor(x,projects).map(row=>row.project.name),['Renamed','Other']);
+ assert.deepEqual(localProjectsFor(x,projects.slice(1)).map(row=>row.project.id),['other']);
+});
 
 test('old project discovery cannot contradict a freshly changed user flag',()=>{
  const x={...addon,components:[{...global,enabled:false,config_authoritative:true,config_changed_at:2000,observations:[{kind:'discovery',cwd:project.path,enabled:true,at:'1970-01-01T00:00:01Z'}]}]};

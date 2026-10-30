@@ -33,6 +33,39 @@ function fixture(t,fail=false){
  const doc=dom.window.document,open=()=>vm.runInContext("openAddon('old')",ctx);
  return {dom,ctx,doc,requests,open};
 }
+test('local scope opens confirmed projects and source paths without mutating configuration',async t=>{
+ const f=fixture(t),addon=f.ctx.snapshot.addons[0];
+ f.ctx.snapshot.projects=[{id:'zoo',name:'Zoo',path:'C:/zoo'},{id:'cafe',name:'Café',path:'C:/cafe',available:false}];
+ addon.components.push({id:'local',name:'local',kind:'skill',scope:'local',installed:true,enabled:false,project_ids:['zoo','cafe'],source_locations:[{id:'local-source',path:'C:/shared/local/SKILL.md',available:true,label:'Файл'}]});
+ addon.components.push({id:'found',name:'Unconfirmed',kind:'skill',scope:'local',installed:false,project_ids:['cafe']});
+ f.open();const scope=f.doc.querySelector('[data-open-local-projects]');
+ assert.match(scope.textContent,/Глобально \+ локально/);assert.match(scope.textContent,/Zoo, Café/);assert.equal(scope.getAttribute('aria-haspopup'),'dialog');
+ scope.click();
+ assert.equal(f.doc.querySelector('#reader').hasAttribute('open'),true);
+ assert.equal(f.doc.querySelectorAll('.local-installation').length,2);
+ assert.match(f.doc.querySelector('#reader-content').textContent,/Отключено/);
+ assert.match(f.doc.querySelector('#reader-content').textContent,/Папка проекта недоступна/);
+ assert.doesNotMatch(f.doc.querySelector('#reader-content').textContent,/Unconfirmed/);
+ const reveal=f.doc.querySelector('#reader [data-source-folder]');assert.equal(reveal.dataset.sourceContext,'zoo');
+ reveal.click();await settle();
+ assert.deepEqual(f.requests,[{url:'/api/reveal-source',payload:{id:'old',component_id:'local',context:'zoo',source_id:'local-source'}}]);
+ let copied;f.ctx.navigator={clipboard:{writeText:async value=>{copied=value;}}};
+ f.doc.querySelector('#reader [data-copy-path]').click();await settle();assert.equal(copied,'C:/shared/local/SKILL.md');
+ const changed=new Promise(resolve=>f.dom.window.addEventListener('hashchange',resolve,{once:true}));
+ f.doc.querySelector('[data-scope-project="zoo"]').click();await changed;
+ assert.equal(f.dom.window.location.hash,'#project=zoo');assert.equal(f.doc.querySelector('#reader').hasAttribute('open'),false);
+ assert.equal(f.requests.length,1);
+});
+
+test('scope keeps globals readonly and never guesses missing local project associations',t=>{
+ const f=fixture(t);f.open();assert.equal(f.doc.querySelector('[data-open-local-projects]'),null);
+ Object.assign(f.ctx.snapshot.addons[0].components[0],{scope:'local',project_path:'C:/unregistered'});
+ f.open();assert.match(f.doc.querySelector('[data-open-local-projects]').textContent,/Проекты не подтверждены/);
+ f.doc.querySelector('[data-open-local-projects]').click();
+ assert.equal(f.doc.querySelectorAll('[data-scope-project]').length,0);
+ assert.match(f.doc.querySelector('#reader-content').textContent,/не подтверждена/);
+});
+
 test('property dialogs save only the selected field and tags are edited as chips',async t=>{
  const f=fixture(t);f.open();
  f.doc.querySelector('[data-property=origins]').click();

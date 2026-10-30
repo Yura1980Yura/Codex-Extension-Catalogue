@@ -74,6 +74,10 @@ export function componentsFor(addon,project=null){
  return result;
 }
 
+export function localProjectsFor(addon,projects){
+ return projects.map(project=>({project,components:componentsFor(addon,project).filter(c=>c.installed&&c.scope==='local')})).filter(row=>row.components.length);
+}
+
 export function presence(parts){return parts.some(c=>c.installed)?'installed':parts.length?'unconfirmed':'suggested';}
 export function status(parts){
  const values=parts.filter(c=>c.installed&&c.kind!=='program');
