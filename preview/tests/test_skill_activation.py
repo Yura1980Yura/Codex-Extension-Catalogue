@@ -5,7 +5,7 @@ from controls import Controls,Conflict
 
 class ExactSkillActivation(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name);self.home=self.root/'home';self.profile=self.home/'.codex';self.profile.mkdir(parents=True)
+        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve();self.home=self.root/'home';self.profile=self.home/'.codex';self.profile.mkdir(parents=True)
         self.source=self.root/'data';self.source.mkdir();self.work=self.root/'work';self.work.mkdir();self.file=self.profile/'config.toml';self.file.write_text('')
         self.control=Controls({'home':str(self.home),'source_data':str(self.source),'runtime':str(Path(__file__).resolve().parents[2]/'app')},self.work,self.rpc)
         self.paths=[]
@@ -18,8 +18,8 @@ class ExactSkillActivation(unittest.TestCase):
         if method=='skills/config/write':
             self.file.write_text('[[skills.config]]\npath='+json.dumps(params['path'])+'\nenabled='+str(params['enabled']).lower()+'\n');return {'effectiveEnabled':params['enabled']},'fixture'
         if method=='skills/list':
-            config=tomllib.loads(self.file.read_text());disabled={row['path']:row['enabled'] for row in config.get('skills',{}).get('config',[])}
-            return {'data':[{'cwd':str(self.home),'skills':[{'path':str(path),'enabled':disabled.get(str(path),True)} for path in self.paths]}]},'fixture'
+            config=tomllib.loads(self.file.read_text());disabled={Path(row['path']).resolve():row['enabled'] for row in config.get('skills',{}).get('config',[])}
+            return {'data':[{'cwd':str(self.home),'skills':[{'path':str(path),'enabled':disabled.get(path.resolve(),True)} for path in self.paths]}]},'fixture'
         raise AssertionError(method)
     def test_each_owner_and_scope_supports_its_selected_installation(self):
         for key in ['local:test','vendor:test','system:test','plugin:test']:
@@ -31,7 +31,7 @@ class ExactSkillActivation(unittest.TestCase):
         a=self.control.activation;revision=a.state(self.card,self.home,path=self.paths[0])['revision']
         result=a.change(self.source,self.home,self.home,self.card['id'],False,revision,request_fn=self.rpc,path=self.paths[0])
         self.assertEqual(result['verification'],'confirmed');self.assertFalse(a.state(self.card,self.home,path=self.paths[0])['enabled']);self.assertTrue(a.state(self.card,self.home,path=self.paths[1])['enabled'])
-        self.assertEqual(result['event']['data']['skill_path'],str(self.paths[0]))
+        self.assertEqual(Path(result['event']['data']['skill_path']).resolve(),self.paths[0].resolve())
         a.recover_locked(self.source,self.home);self.assertEqual(len(a.journal.read_events(self.source)),1)
     def test_changed_instruction_invalidates_a_stale_switch(self):
         a=self.control.activation;revision=a.state(self.card,self.home,path=self.paths[0])['revision'];self.paths[0].write_text('Replaced instruction')

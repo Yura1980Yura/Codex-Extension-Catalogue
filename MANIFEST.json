@@ -1,5 +1,5 @@
 {
-  "bundle_id": "639630bf805d4a673fb78c6ac2ce50a2bda2e06f472f68827ab01ead73ec9bad",
+  "bundle_id": "786dc3fe336ba295a49430606f9f93e0a293ed6be381ae2c3b89be54f26f3417",
   "date": "2026-10-30",
   "source_revision": "v3.10.0",
   "files": {
@@ -133,7 +133,7 @@
     "preview/tests/test_presentation.py": "991974d43a9cce6afa536fd0a046b01f9400364bcb308ac324e6488ec21c074e",
     "preview/tests/test_project_folders.py": "57afe2aabac068a491380c2d0b0152efd6e3785d2fced70ebfd42eb675d3f906",
     "preview/tests/test_server.py": "8f8d8a0fbd5772f0803c1f5d227af0d136975009c4251ba0a03173f65a660b19",
-    "preview/tests/test_skill_activation.py": "ba03393bff734a4332397c427d48db9c791e7794eb9fde4260d73911163f2fd2",
+    "preview/tests/test_skill_activation.py": "c9d130afba73c4d630818e27663b804a697a2cfdd7bdc15e6fbc8867b361cebf",
     "preview/tests/test_skill_files.py": "f2116c10f273ed2354825109498d2366b3e218261b33752fe01e11d8fab1a494",
     "preview/tests/test_skill_repositories.py": "cdafa3553413a8b1be2a3a0b1d4272db54f6dfd8246aa6c374c9790c8b7f59c1",
     "preview/tests/test_skill_sources.py": "0bf2456f5a24aaca2dd541a7dd35bec5a437006cd55215f37d174723e51b6722",
