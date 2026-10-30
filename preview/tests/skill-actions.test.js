@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {skillFileTools,bindSkillFileTools,removedSkillsHTML} from '../web/skill-actions.js';
+import {skillManagementHTML,bindSkillFileTools,removedSkillsHTML} from '../web/skill-actions.js';
 
 test('installation previews the selected project and only writes after explicit confirmation',async()=>{
  const dom=new JSDOM('<main></main><section id="reader"></section>');
  const previous=globalThis.document;globalThis.document=dom.window.document;
  try{
   const c={id:'c',kind:'skill',name:'example',path:'C:/finding/example/SKILL.md',file_actions:{install:true}};
-  document.querySelector('main').innerHTML=skillFileTools([c],String);
+  document.querySelector('main').innerHTML=skillManagementHTML([c],String);
   const calls=[],plan={name:'example',description:'Example',source:'C:/finding/example',destination:'C:/project/.agents/skills/example',target:'Project',files:2,revision:'revision'};
   let accepted,closed=false;
   bindSkillFileTools({data:{projects:[{id:'p',name:'Project',available:true}]},addon:{id:'a'},parts:[c],esc:String,toast(){},readPanel(title,html){document.querySelector('#reader').innerHTML=html;},closeReader(){closed=true;},acceptState(state){accepted=state;},api:async(name,body)=>{calls.push({name,body});return name==='skill-plan'?plan:{state:{confirmed:false}};}});
@@ -28,14 +28,32 @@ test('cancelled removal never calls the file mutation endpoint',async()=>{
  const previous=globalThis.document;globalThis.document=dom.window.document;
  try{
   const c={id:'c',kind:'skill',name:'example',path:'C:/skills/example/SKILL.md',installed:true,file_actions:{remove:true}};
-  document.querySelector('main').innerHTML=skillFileTools([c],String);const calls=[];let closed=false;
+  document.querySelector('main').innerHTML=skillManagementHTML([c],String);const calls=[];let closed=false;
   bindSkillFileTools({data:{projects:[]},addon:{id:'a'},parts:[c],esc:String,toast(){},readPanel(title,html){document.querySelector('#reader').innerHTML=html;},closeReader(){closed=true;},api:async(name)=>{calls.push(name);return {name:'example',source:'C:/skills/example/SKILL.md',target:'All projects',files:1};}});
   await document.querySelector('[data-remove-skill]').onclick();
+  assert.match(document.querySelector('#reader .skill-removal-warning').textContent,/Удалить этот навык из Codex\?/);
+  assert.match(document.querySelector('#reader .skill-removal-warning').textContent,/example/);
   assert.match(document.querySelector('#reader').textContent,/Удаляется только выбранный SKILL.md/);
   assert.equal(document.querySelector('#confirm-skill-operation').textContent,'Удалить только этот SKILL.md');
   document.querySelector('#cancel-skill-operation').onclick();
   assert.deepEqual(calls,['skill-plan']);assert.equal(closed,true);
  }finally{globalThis.document=previous;}
+});
+
+test('confirmed removal carries the reviewed component and revision; file actions remain separate',async()=>{
+ const dom=new JSDOM('<main></main><section id="reader"></section>');
+ const previous=globalThis.document;globalThis.document=dom.window.document;
+ try{
+  const c={id:'selected',kind:'skill',name:'example',path:'C:/skills/example/SKILL.md',installed:true,file_actions:{remove:true}};
+  document.querySelector('main').innerHTML=skillManagementHTML([c],String);const calls=[];let accepted;
+  assert.equal(document.querySelectorAll('[data-copy-path],[data-reveal-skill],.source-path').length,0);
+  bindSkillFileTools({data:{projects:[]},addon:{id:'addon'},parts:[c],esc:String,toast(){},readPanel(title,html){document.querySelector('#reader').innerHTML=html;},closeReader(){},acceptState(state){accepted=state;},api:async(name,body)=>{calls.push({name,body});return name==='skill-plan'?{name:'example',source:c.path,target:'Лично',files:1,revision:'exact-revision'}:{state:{removed:true}};}});
+  await document.querySelector('[data-remove-skill]').onclick();
+  assert.equal(calls.length,1);assert.equal(calls[0].name,'skill-plan');
+  const confirm=document.querySelector('#confirm-skill-operation');await confirm.onclick({currentTarget:confirm});
+  assert.deepEqual(calls[1],{name:'skill-change',body:{id:'addon',component_id:'selected',action:'remove',project_id:null,revision:'exact-revision',confirmed:true}});
+  assert.deepEqual(accepted,{removed:true});
+ }finally{globalThis.document=previous;dom.window.close();}
 });
 
 test('history restores a known backup with a preview and explicit confirmation',async()=>{

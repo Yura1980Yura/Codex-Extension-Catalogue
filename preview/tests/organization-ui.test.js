@@ -44,8 +44,49 @@ test('actual editor saves multiple values, replaces all tags and opens only the 
  f.doc.querySelector('#tags-input').value='initial, renamed';
  f.doc.querySelector('#tags-form').dispatchEvent(new f.dom.window.Event('submit',{bubbles:true,cancelable:true}));await settle();
  assert.equal(f.doc.querySelector('#tags-input').value,'initial, renamed');assert.doesNotMatch(f.doc.querySelector('.tag-list').textContent,/remove/);
+ f.doc.querySelector('[data-tab="sources"]').click();
  f.doc.querySelector('[data-source-folder]').click();await settle();
  assert.deepEqual(f.requests.at(-1),{url:'/api/reveal-source',payload:{id:'old',component_id:'c-old',context:'all',source_id:'known'}});
+});
+
+test('one source block owns file paths while removal stays below the single Codex switch',t=>{
+ const f=fixture(t),addon=f.ctx.snapshot.addons[0],c=addon.components[0];
+ Object.assign(c,{path:'C:/skills/example/SKILL.md',file_actions:{remove:true},control:{supported:true,enabled:true,revision:'r'}});
+ f.open();
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path').length,0);
+ assert.equal(f.doc.querySelectorAll('[data-remove-skill]').length,1);
+ const management=f.doc.querySelector('.drawer-management');
+ assert.ok(management.querySelector('[data-activation]'));
+ assert.ok(management.querySelector('[data-remove-skill]'));
+ assert.ok(management.querySelector('[data-activation]').compareDocumentPosition(management.querySelector('[data-remove-skill]'))&4);
+ f.doc.querySelector('[data-tab="sources"]').click();
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-source-folder]').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-copy-path]').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-remove-skill]').length,0);
+ f.doc.querySelector('[data-tab="composition"]').click();
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path,#drawer-panel .path').length,0);
+ assert.equal(f.doc.querySelectorAll('[data-remove-skill]').length,1);
+});
+
+test('shared sources appear once and a removable skill without a supported switch still has management',t=>{
+ const f=fixture(t),addon=f.ctx.snapshot.addons[0],c=addon.components[0];
+ Object.assign(c,{path:'C:/skills/example/SKILL.md',file_actions:{remove:true},control:{supported:false,message:'Нет выключателя'}});
+ addon.components.push({...c,id:'second',name:'second',source_locations:[{id:'same-file',path:'c:\\skills\\example\\SKILL.md',available:true,label:'Настройка Codex'}],file_actions:{},kind:'mcp'});
+ f.open();
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-remove-skill]').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path').length,0);
+ f.doc.querySelector('[data-tab="sources"]').click();
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-copy-path]').length,1);
+ assert.equal(f.doc.querySelectorAll('#drawer-panel [data-remove-skill]').length,0);
+ assert.match(f.doc.querySelector('.source-evidence').textContent,/old/);
+ assert.match(f.doc.querySelector('.source-evidence').textContent,/second/);
+ f.doc.querySelector('[data-tab="composition"]').click();
+ const component=f.doc.querySelector('.component');
+ assert.match(component.textContent,/Нет выключателя/);
+ assert.ok(component.querySelector('[data-remove-skill]'));
+ assert.equal(f.doc.querySelectorAll('#drawer-panel .source-path,#drawer-panel .path').length,0);
 });
 test('conflicting save preserves all selected values and shows the error in the form',async t=>{
  const f=fixture(t,true);f.open();const form=f.doc.querySelector('#metadata-form');
