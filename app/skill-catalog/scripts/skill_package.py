@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import re
 import os
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit,quote
 
 MAX_META=64*1024
 MAX_DOC=512*1024
@@ -32,8 +32,20 @@ def safe_document(root,relative):
     if not isinstance(relative,str) or len(relative)>240 or '\\' in relative or ':' in relative or '\x00' in relative:return None
     value=Path(relative)
     if value.is_absolute() or '..' in value.parts or value.suffix.lower() not in ('.md','.txt'):return None
-    path=(root/value).resolve()
-    return path if path.is_relative_to(root) and path.is_file() and path.stat().st_size<=MAX_DOC else None
+    try:
+        path=(root/value).resolve()
+        return path if path.is_relative_to(root) and path.is_file() and path.stat().st_size<=MAX_DOC else None
+    except (OSError,RuntimeError):return None
+
+
+def small_file(path,maximum):
+    try:return path.is_file() and path.stat().st_size<=maximum
+    except OSError:return False
+
+
+def package_directory(path,root):
+    try:return not path.is_symlink() and path.resolve().is_relative_to(root)
+    except (OSError,RuntimeError):return False
 
 
 def document_index(root,declared):
@@ -43,9 +55,9 @@ def document_index(root,declared):
         if isinstance(row,dict):candidates.append((row.get('id'),row.get('title')))
     skip={'.git','.local','.venv','node_modules','__pycache__','.pytest_cache','vendor'}
     visited=0
-    for folder,dirs,files in os.walk(root,followlinks=False):
+    for folder,dirs,files in os.walk(root,followlinks=False,onerror=lambda error:issues.append({'id':'.','reason':'Часть пакета недоступна для чтения.'})):
         base=Path(folder)
-        dirs[:]=sorted(d for d in dirs if d not in skip and not d.startswith('.') and not (base/d).is_symlink() and (base/d).resolve().is_relative_to(root))
+        dirs[:]=sorted(d for d in dirs if d not in skip and not d.startswith('.') and package_directory(base/d,root))
         if base!=root and 'SKILL.md' in files:
             dirs[:]=[];continue
         for name in sorted(files):
@@ -83,7 +95,7 @@ def load(instruction,name):
     root=Path(instruction).resolve().parent;result={};raw={}
     try:
         meta=root/'catalog.json'
-        if meta.is_file() and meta.stat().st_size<=MAX_META:
+        if small_file(meta,MAX_META):
             try:value=json.loads(meta.read_text('utf-8-sig'))
             except ValueError:
                 value=None
@@ -112,22 +124,23 @@ def load(instruction,name):
             url=urlsplit(source['url'])
             if url.scheme=='https' and url.hostname and not (url.username or url.password or url.query):clean['url']=source['url']
         installed=root/'installation.json'
-        if installed.is_file() and installed.stat().st_size<=MAX_META:
+        if small_file(installed,MAX_META):
             try:
                 provenance=json.loads(installed.read_text('utf-8-sig'))
+                if not isinstance(provenance,dict):provenance={}
                 repository=provenance.get('source_repository','')
-                match=re.fullmatch(r'(?:https://github.com/)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?',repository)
+                match=re.fullmatch(r'(?:https://github.com/)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?',repository) if isinstance(repository,str) else None
                 if match:
                     clean.setdefault('repository',match[1])
                     sub=provenance.get('source_subdirectory','')
                     revision=provenance.get('source_revision','')
-                    if isinstance(sub,str) and sub and not any(x in sub for x in ('..','\\',':')) and isinstance(revision,str) and re.fullmatch(r'[A-Za-z0-9_./-]+',revision):
-                        clean.setdefault('url',f'https://github.com/{match[1]}/tree/{revision}/{sub}')
+                    if isinstance(sub,str) and sub and not sub.startswith('/') and not any(x in sub for x in ('..','\\',':')) and isinstance(revision,str) and re.fullmatch(r'[A-Za-z0-9_./-]+',revision) and not {'.','..'}.intersection(revision.split('/')):
+                        clean.setdefault('url',f'https://github.com/{match[1]}/tree/{quote(revision,safe="")}/{quote(sub,safe="/")}')
             except (OSError,ValueError,TypeError):pass
         if clean:result['source']=clean
         if isinstance(raw.get('tags'),list):result['package_tags']=[t for t in raw['tags'][:100] if isinstance(t,str) and 0<len(t)<=120]
         ui=root/'agents/openai.yaml'
-        if ui.is_file() and ui.stat().st_size<=MAX_META:
+        if small_file(ui,MAX_META):
             text=ui.read_text('utf-8-sig')
             title=scalar(text,'display_name');prompt=scalar(text,'default_prompt')
             if title and 'title_ru' not in result:result['title_ru']=title
@@ -146,7 +159,9 @@ def documents(instruction,entries):
     for row in entries[:MAX_DOCUMENTS]:
         path=safe_document(root,row.get('id'))
         if path:
-            raw=path.read_bytes();total+=len(raw)
+            try:raw=path.read_bytes()
+            except OSError:continue
+            total+=len(raw)
             if total>16*1024*1024:break
             try:result[row['id']]={'text':raw.decode('utf-8-sig'),'title':row['title'],'path':str(path)}
             except UnicodeError:continue

@@ -72,7 +72,7 @@ def enrich(addons,instructions,package,repositories,directions):
             for key,label in (('url','Источник навыка'),):
                 if source.get(key) and not any(row['url']==source[key] for row in links):links.append({'label':label,'url':source[key]})
             for index in repositories.values():
-                hit=__import__('skill_repositories').match(skill,path,index)
+                hit=__import__('skill_repositories').match({**skill,'source':source},path,index)
                 if hit:
                     if not any(row['url']==hit['url'] for row in links):links.append({'label':hit['label'],'url':hit['url']})
                     skill['repository_evidence']=hit['evidence'];report['repository_links']+=1

@@ -1,6 +1,7 @@
 {
   "schema": 1,
   "name": "skill-catalog",
+  "version": "3.9.1",
   "title_ru": "Каталог надстроек Codex",
   "instruction_language": "ru",
   "origin": "asemic",

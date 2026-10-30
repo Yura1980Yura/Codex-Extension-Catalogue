@@ -48,9 +48,11 @@ class Presentation(unittest.TestCase):
 
     def test_repository_match_is_evidence_not_a_name_only_claim_for_other_authors(self):
         raw=self.instruction.read_bytes();blob=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
-        index={'repository':'owner/library','revision':'abc','status':'verified','checked_at':'2026-10-30T10:00:00Z','skills':{'product-workshop':[{'path':'skills/product-workshop','sha':blob}]}}
-        hit=match(self.skill,self.instruction,index);self.assertIn('/tree/abc/skills/product-workshop',hit['url']);self.assertIn('совпадает',hit['evidence'])
+        index={'repository':'owner/library','revision':'a'*40,'status':'verified','checked_at':'2026-10-30T10:00:00Z','skills':{'product-workshop':[{'path':'skills/product-workshop','sha':blob}]}}
+        hit=match(self.skill,self.instruction,index);self.assertIn('/tree/'+('a'*40)+'/skills/product-workshop',hit['url']);self.assertIn('совпадает',hit['evidence'])
         index['skills']['product-workshop'][0]['sha']='changed'
+        self.assertIsNone(match(self.skill,self.instruction,index))
+        self.skill['source']={'repository':'owner/library'}
         self.assertIn('отличается',match(self.skill,self.instruction,index)['evidence'])
         self.skill.update(origin='third_party',source={'repository':'different/repo'})
         self.assertIsNone(match(self.skill,self.instruction,index))

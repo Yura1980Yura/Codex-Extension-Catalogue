@@ -3,6 +3,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'app/skill-catalog/scripts'))
 import catalog
@@ -10,6 +11,21 @@ import skill_package
 
 
 class SkillPackage(unittest.TestCase):
+    def test_document_disappearing_during_read_does_not_hide_other_documents(self):
+        other=self.skill/'other.md';other.write_text('# Other','utf-8')
+        original=Path.read_bytes
+        def read(path):
+            if path.name=='README.md':raise FileNotFoundError('removed during refresh')
+            return original(path)
+        entries=[{'id':'README.md','title':'Readme'},{'id':'other.md','title':'Other'}]
+        with patch.object(Path,'read_bytes',read):documents=skill_package.documents(self.path,entries)
+        self.assertEqual(list(documents),['other.md'])
+
+    def test_malformed_optional_installation_metadata_keeps_readme_available(self):
+        (self.skill/'installation.json').write_text('[]','utf-8')
+        result=skill_package.load(self.path,'example')
+        self.assertEqual(result['documentation'][0]['id'],'README.md')
+
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.home=Path(self.tmp.name).resolve();self.skill=self.home/'.codex/skills/example';self.skill.mkdir(parents=True)
