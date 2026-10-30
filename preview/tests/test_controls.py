@@ -57,7 +57,7 @@ class Switches(unittest.TestCase):
         self.assertEqual(tomllib.loads(self.file.read_text())['unrelated']['secret'],'DO_NOT_LEAK')
     def test_project_and_managed_sources_are_not_overwritten(self):
         item=self.snapshot['addons'][0]['components'][0]['contexts']['all']
-        for source in ('project','system','legacyManagedConfigTomlFromMdm'):
+        for source in ('project','legacyManagedConfigTomlFromMdm'):
             item['sources']=[{'scope':source,'applied':True}]
             self.assertFalse(self.control.decorate(self.snapshot)['addons'][0]['components'][0]['contexts']['all']['control']['supported'])
     def test_lost_response_reads_committed_value_and_records_once(self):
@@ -100,18 +100,34 @@ class Switches(unittest.TestCase):
         facts['sources']=[]
         self.assertFalse(self.control.decorate(self.snapshot)['addons'][0]['components'][2]['contexts']['all']['control']['supported'])
 
-    def test_unavailable_skill_reasons_do_not_change_switch_eligibility(self):
+    def test_project_switch_updates_only_its_known_file_with_backup(self):
+        project=self.root/'project';project_file=project/'.codex/config.toml';project_file.parent.mkdir(parents=True)
+        raw=b'[mcp_servers.sample]\ncommand="unused"\nenabled=true\ndefault_tools_approval_mode="prompt"\n';project_file.write_bytes(raw)
+        original=self.file.read_bytes();self.snapshot['projects'][0]['path']=str(project)
+        c=self.snapshot['addons'][0]['components'][0];c['contexts']['p']={'scope':'local','installed':True,'enabled':True,'sources':[{'scope':'project','applied':True,'path':str(project_file)}]}
+        def project_rpc(method,params,**kwargs):
+            self.assertEqual(method,'config/read')
+            return {'config':tomllib.loads(project_file.read_text()),'layers':[{'name':{'type':'project','dotCodexFolder':str(project_file.parent)},'version':'v1'}]},'fixture'
+        self.control.request=project_rpc
+        control=self.control.decorate(self.snapshot)['addons'][0]['components'][0]['contexts']['p']['control']
+        result=self.control.change(self.snapshot,{'id':'addon','component_id':c['id'],'context':'p','enabled':False,'revision':control['revision'],'file':'ignored'})
+        self.assertEqual(result['verification'],'codex_config_read');self.assertEqual(self.file.read_bytes(),original)
+        self.assertFalse(tomllib.loads(project_file.read_text())['mcp_servers']['sample']['enabled'])
+        event=self.control.journal.read_events(self.source)[0]['data'];self.assertEqual(Path(event['backup']).read_bytes(),raw)
+        self.assertEqual(event['scope'],'local')
+
+    def test_skill_authorship_no_longer_hides_an_exact_installation_switch(self):
         path=self.home/'.agents/skills/story/SKILL.md';path.parent.mkdir(parents=True);path.write_text('test')
         card={'id':'vendor:author/story:story','locations':[{'path':str(path),'kind':'installation','scope':'user'}]}
         a=self.control.activation
         result=a.state(card,self.home)
-        self.assertFalse(result['supported']);self.assertIn('Известная ошибка каталога',result['message'])
+        self.assertTrue(result['supported'])
         self.assertTrue(a.state({**card,'id':'local:test:story'},self.home)['supported'])
         for key,locations,expected in [
-            ('system:test',[], 'встроенный навык'),
-            ('plugin:test',[], 'входит в плагин'),
-            ('local:project:test',[{'path':str(self.root/'project/.agents/skills/story/SKILL.md'),'scope':'repo'}], 'навык проекта'),
-            ('vendor:missing',[], 'не определил')]:
+            ('system:test',[], 'Точный файл'),
+            ('plugin:test',[], 'Точный файл'),
+            ('local:project:test',[{'path':str(self.root/'project/.agents/skills/story/SKILL.md'),'scope':'repo'}], 'Точный файл'),
+            ('vendor:missing',[], 'Точный файл')]:
             result=a.state({'id':key,'locations':locations},self.home)
             self.assertFalse(result['supported']);self.assertIn(expected,result['message'])
         self.assertFalse(self.calls)

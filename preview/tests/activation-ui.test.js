@@ -1,9 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {singleControl,headerControlHTML,controlGuidance,controlContextNote,tileControlsHTML} from '../web/activation-ui.js';
+import {singleControl,headerControlHTML,controlGuidance,controlScope,controlContextNote,tileControlsHTML} from '../web/activation-ui.js';
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 const part={id:'skill:design',kind:'skill',title:'Дизайн',control:{supported:true,enabled:true}};
+
+test('project and exact-installation switches name their actual scope',()=>{
+ const local={...part,control:{...part.control,scope:'local'}},installation={...part,control:{...part.control,scope:'installation'}};
+ assert.equal(controlScope(local),'Настройка проекта');assert.equal(controlScope(installation),'Эта установка навыка');
+ for(const p of [local,installation]){const dom=new JSDOM(tileControlsHTML([p],esc));assert.doesNotMatch(dom.window.document.body.textContent,/Глобально/);assert.match(dom.window.document.body.textContent,/проект|установка/);dom.window.close();}
+});
 test('single component has a labelled on/off control and preserves the project context',()=>{
  const dom=new JSDOM(headerControlHTML([part],esc,'project:zoo'));
  const button=dom.window.document.querySelector('button');

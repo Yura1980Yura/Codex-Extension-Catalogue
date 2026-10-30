@@ -13,6 +13,7 @@ import threading
 import uuid
 
 from collect import runtime_path, read
+from config_edits import read_config,write_boolean
 
 FIELDS = {'mcp':'mcp_servers','plugin':'plugins','app':'apps'}
 
@@ -45,32 +46,47 @@ class Controls:
         if component['kind']=='skill':
             card = next((s for s in addon.get('skills',[]) if s['id']==component.get('skill_id')),None)
             if not card: return disabled('Инструкция не найдена.')
-            result = self.activation.state(card,self.home,config)
-            return {**result,'scope':'global','component_id':component['id']}
+            result = self.activation.state(card,self.home,config,path=component.get('path'))
+            return {**result,'scope':'installation','installation_scope':facts.get('scope'),'component_id':component['id'],
+                'message':'Только эта установка навыка, по точному пути. Другие копии не меняются. После изменения перезапустите Codex.' if result.get('supported') else result['message']}
         field = FIELDS.get(component['kind'])
         if not field:
             return disabled('Это установленная программа. Её запуском управляют Windows и использующее её подключение, а не переключатель Codex.')
-        if facts.get('scope')!='global':
-            return disabled('Эта настройка принадлежит проекту. Измените её в настройках проекта Codex; глобальный переключатель её не заменяет.')
-        if any(s.get('applied') and s.get('scope') not in ('user','account') for s in facts.get('sources',[])):
-            return disabled('Есть настройки проекта или организации. Используйте настройки Codex, чтобы не подменить их глобальным значением.')
+        sources=[s for s in facts.get('sources',[]) if s.get('applied')]
+        if any(s.get('scope') not in ('user','account','project','system') for s in sources):
+            return disabled('Эта настройка управляется организацией. Каталог не обходит её ограничения.')
+        project_source=next((s for s in sources if s.get('scope')=='project'),None)
+        config_file=codex_dir(self.home)/'config.toml'
+        if project_source:
+            config_file=Path(project_source.get('path',''))
+            if not config_file.is_absolute() or config_file.name!='config.toml' or config_file.parent.name!='.codex' or not config_file.is_file():
+                return disabled('Точный файл настройки проекта не подтверждён. Сверьте каталог с Codex.')
+            try:config=read_config(config_file)
+            except (OSError,ValueError):return disabled('Настройки проекта не удалось прочитать. Файл не изменён.')
+        elif facts.get('scope')!='global':
+            return disabled('Источник локальной настройки не подтверждён. Сверьте каталог с Codex.')
         name = component.get('config_name') or component['id'].removeprefix(component['kind']+':')
         parsed,fingerprint = config
         row = parsed.get(field,{}).get(name)
-        if row is None and field=='apps' and component['id'].startswith('app:') and not name.startswith('_') and any(s.get('scope')=='account' and s.get('path')=='Codex app/installed' for s in facts.get('sources',[])):
+        if row is None and not name.startswith('_') and (
+            field=='apps' and component['id'].startswith('app:') and any(s.get('scope')=='account' and s.get('path')=='Codex app/installed' for s in facts.get('sources',[]))
+            or field=='plugins' and component['id'].startswith('plugin:')
+            or any(s.get('scope')=='system' for s in sources)):
             # A confirmed account connector may inherit the documented default.
             # Write a local use preference, never disconnect or authorize an account.
             row = {}
         if not isinstance(row,dict):
             # Account-only/built-in bundles cannot be equated with a local plugin.
             return disabled('Отдельная пользовательская настройка этой части не найдена. Управление доступно в настройках Codex.')
-        enabled = row.get('enabled',parsed.get('apps',{}).get('_default',{}).get('enabled',True) if field=='apps' else True)
+        fallback=parsed.get('apps',{}).get('_default',{}).get('enabled',True) if field=='apps' else True
+        if (project_source or any(s.get('scope')=='system' for s in sources)) and type(facts.get('enabled')) is bool:fallback=facts['enabled']
+        enabled = row.get('enabled',fallback)
         if type(enabled) is not bool: return disabled('Неоднозначная настройка включения; проверьте настройки Codex.')
         key = field+'.'+json.dumps(name,ensure_ascii=False)+'.enabled'
-        revision = hashlib.sha256((fingerprint+'\0'+key).encode()).hexdigest()
-        return {'supported':True,'enabled':enabled,'revision':revision,'scope':'global',
-            'component_id':component['id'],'field':field,'name':name,'key':key,
-            'message':'На этом компьютере, для всех проектов без собственного переопределения. После изменения перезапустите Codex.'}
+        revision = hashlib.sha256((fingerprint+'\0'+str(config_file.resolve())+'\0'+key).encode()).hexdigest()
+        return {'supported':True,'enabled':enabled,'revision':revision,'scope':'local' if project_source else 'global',
+            'component_id':component['id'],'field':field,'name':name,'key':key,'file':str(config_file),'fingerprint':fingerprint,
+            'message':'Настройка этого проекта. После изменения перезапустите Codex.' if project_source else 'На этом компьютере, для всех проектов без собственного переопределения. После изменения перезапустите Codex.'}
 
     def decorate(self, snapshot):
         snapshot = deepcopy(snapshot)
@@ -92,7 +108,7 @@ class Controls:
                     component['config_changed_at'] = changed_at
                 for facts in component.get('contexts',{'all':component}).values():
                     control = self.descriptor(addon,component,facts,config) if config and not self.recovery_error else {'supported':False,'message':'Настройки или незавершённая запись истории требуют проверки. Переключение временно недоступно.'}
-                    facts['control'] = {k:v for k,v in control.items() if k not in ('field','name','key')}
+                    facts['control'] = {k:v for k,v in control.items() if k not in ('field','name','key','file','fingerprint')}
                     if control.get('supported'):
                         facts['enabled'] = control['enabled']
                         facts['config_authoritative'] = True
@@ -116,7 +132,7 @@ class Controls:
         return addon,component,control
 
     def finish(self, pending, recovered=False, verified=None):
-        config,_ = self.activation.configuration(self.home)
+        config,_ = read_config(pending.get('file') or codex_dir(self.home)/'config.toml')
         actual = config.get(pending['field'],{}).get(pending['name'],{}).get('enabled')
         confirmed = actual is pending['enabled']
         with self.storage.locked(self.source):
@@ -158,24 +174,40 @@ class Controls:
                 return {'saved':True,'unchanged':True,'restart_required':False}
             if component['kind']=='skill':
                 try:
-                    return self.activation.change(self.source,self.home,str(self.home),component['skill_id'],payload['enabled'],payload['revision'],request_fn=self.request)
+                    cwd=component.get('project_path') or str(self.home)
+                    return self.activation.change(self.source,self.home,cwd,component['skill_id'],payload['enabled'],payload['revision'],request_fn=self.request,path=component.get('path'))
                 except self.activation.Conflict as error: raise Conflict(str(error)) from None
                 except Exception: raise ControlError('Не удалось подтвердить переключение навыка. Состояние перечитано; повторите после проверки.') from None
             # Ask Codex for its own version immediately before the compare-and-swap.
-            response = self.rpc('config/read',{'includeLayers':True,'cwd':str(self.home)})
-            layer = next((x for x in response.get('layers',[]) if x['name'].get('type')=='user' and not x['name'].get('profile') and Path(x['name']['file']).resolve()==codex_dir(self.home)/'config.toml'),None)
+            context=payload.get('context','all')
+            project=next((p for p in snapshot.get('projects',[]) if p['id']==context),None)
+            cwd=(project or {}).get('path') or str(self.home)
+            if control['scope']=='local' and not project:
+                project=next((p for p in snapshot.get('projects',[]) if context in component.get('contexts',{}) and p['id']==context),None)
+                if not project:raise ControlError('Для настройки проекта выберите его в каталоге.')
+            response = self.rpc('config/read',{'includeLayers':True,'cwd':cwd})
+            target=Path(control['file']).resolve()
+            def layer_file(layer):
+                name=layer.get('name',{})
+                return Path(name['file']).resolve() if name.get('file') else (Path(name['dotCodexFolder'])/'config.toml').resolve() if name.get('dotCodexFolder') else None
+            layer = next((x for x in response.get('layers',[]) if layer_file(x)==target and not x.get('disabledReason') and not x['name'].get('profile')),None)
             _,_,again = self.resolve(snapshot,payload)
             if again['revision']!=control['revision'] or not layer or not layer.get('version'):
                 raise Conflict('Конфигурация изменилась или её версия не подтверждена. Обновите состояние.')
             pending = {'activation_id':uuid.uuid4().hex,'extension_id':addon['id'],'component_id':component['id'],
                 'resource_name':addon['title'],'component_name':component['name'],'field':control['field'],'name':control['name'],
-                'before_enabled':control['enabled'],'enabled':payload['enabled'],'scope':'global'}
+                'before_enabled':control['enabled'],'enabled':payload['enabled'],'scope':control['scope'],'file':control['file']}
+            if control['scope']=='local':pending['backup']=str(self.work/'control-backups'/pending['activation_id']/'config.toml')
             self.storage.atomic_json(self.pending,pending)
             verification = 'config_readback'
             try:
-                result = self.rpc('config/value/write',{'keyPath':control['key'],'value':payload['enabled'],'mergeStrategy':'upsert',
-                    'expectedVersion':layer['version'],'filePath':str(codex_dir(self.home)/'config.toml')})
-                effective = self.rpc('config/read',{'includeLayers':False,'cwd':str(self.home)})
+                if control['scope']=='local':
+                    write_boolean(target,control['field'],control['name'],payload['enabled'],control['fingerprint'],pending['backup'])
+                    result={'status':'ok'}
+                else:
+                    result = self.rpc('config/value/write',{'keyPath':control['key'],'value':payload['enabled'],'mergeStrategy':'upsert',
+                        'expectedVersion':layer['version'],'filePath':control['file']})
+                effective = self.rpc('config/read',{'includeLayers':False,'cwd':cwd})
                 value = effective['config'].get(control['field'],{}).get(control['name'],{}).get('enabled')
                 verification = 'codex_config_read' if value is payload['enabled'] and result.get('status')=='ok' else 'overridden'
             except Exception:

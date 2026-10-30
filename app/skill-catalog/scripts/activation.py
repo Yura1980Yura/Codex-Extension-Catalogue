@@ -1,4 +1,4 @@
-"""Local user-skill switches through Codex's documented skills/config/write API.
+"""Exact-installation switches through Codex's documented skills/config/write API.
 
 The config is authoritative. A durable receipt recovers history after interruption;
 recovery never retries a configuration write or rewrites an old configuration.
@@ -46,37 +46,35 @@ def personal_target(card, home):
     return next(iter(candidates)) if len(candidates) == 1 else None
 
 
-def target(card, home):
-    if not card["id"].startswith("local:"):
-        return None
-    return personal_target(card, home)
+def target(card, home, path=None):
+    candidates = set()
+    for location in card.get('locations', []):
+        candidate = Path(location.get('path', ''))
+        if location.get('kind') == 'cache' or candidate.name != 'SKILL.md' or not candidate.is_file():
+            continue
+        try:
+            if path is None or normalized(candidate) == normalized(path):
+                candidates.add(candidate.resolve())
+        except (OSError,RuntimeError):continue
+    return next(iter(candidates)) if len(candidates) == 1 else None
 
 
 def unavailable_message(card, home):
-    key = card["id"]
-    if key.startswith("vendor:") and personal_target(card, home):
-        return "Известная ошибка каталога: этот личный навык установлен, но выключатель скрыт из-за отметки о стороннем авторе. Codex допускает его отключение; исправление каталога ещё не внесено."
-    if key.startswith("system:"):
-        return "Это встроенный навык Codex. Его отдельное включение и отключение в каталоге пока не реализовано."
-    if key.startswith("plugin:"):
-        return "Навык входит в плагин. Используйте выключатель плагина, если он доступен; отдельного выключателя этого навыка в каталоге пока нет."
-    if any(location.get("scope") in ("project", "repo") or location.get("project") for location in card.get("locations", [])):
-        return "Это навык проекта. Управление такими установками в каталоге пока не реализовано. Отсутствие выключателя не означает запрет отключения в Codex."
-    return "Каталог не определил единственную обычную личную установку в стандартных папках навыков. Управление этим расположением пока не поддерживается."
+    return "Точный файл действующей установки не подтверждён или найдено несколько копий. Выполните сверку и выберите конкретную установку в составе надстройки."
 
 
-def state(card, home, config=None):
-    path = target(card, home)
+def state(card, home, config=None, path=None):
+    path = target(card, home, path)
     if path is None:
         return {"supported": False, "enabled": None, "message": unavailable_message(card, home)}
     try:
         parsed, fingerprint = config or configuration(home)
         entries = parsed.get("skills", {}).get("config", [])
-        matches = [row for row in entries if isinstance(row, dict) and isinstance(row.get("path"), str) and normalized(row["path"]) == normalized(path)]
+        matches = [row for row in entries if isinstance(row, dict) and isinstance(row.get("path"), str) and normalized(Path(row['path']) if Path(row['path']).name=='SKILL.md' else Path(row['path'])/'SKILL.md') == normalized(path)]
         if len(matches) > 1 or any(type(row.get("enabled")) is not bool for row in matches):
             raise ValueError("Неоднозначная настройка навыка.")
         enabled = matches[0]["enabled"] if matches else True
-        revision = hashlib.sha256(journal.encoded({"config": fingerprint, "path": normalized(path)})).hexdigest()
+        revision = hashlib.sha256(journal.encoded({"config": fingerprint, "path": normalized(path),"instruction":hashlib.sha256(path.read_bytes()).hexdigest()})).hexdigest()
         return {"supported": True, "enabled": enabled, "configured": bool(matches), "revision": revision,
                 "message": "Изменение действует в Codex на этом компьютере. После переключения требуется перезапуск Codex; каталог и заметки сохраняются."}
     except (OSError, ValueError, TypeError, AttributeError):
@@ -87,7 +85,7 @@ def finish_locked(directory, home, pending, verification="not_checked", recovere
     previous = next((e for e in journal.read_events(directory) if e["data"].get("activation_id") == pending["activation_id"]), None)
     if previous is None:
         card = read_json(Path(directory)/"inventory.json")["skills"].get(pending["skill_id"])
-        actual = state(card, home) if card else {"enabled": None}
+        actual = state(card, home, path=pending.get('skill_path')) if card else {"enabled": None}
         changed = actual.get("supported") and actual["enabled"] == pending["enabled"]
         kind = "skill_activation_changed" if changed else "skill_activation_unconfirmed"
         observations = pending.get("observations", [])
@@ -111,7 +109,7 @@ def recover_locked(directory, home):
     return finish_locked(directory, home, pending, recovered=True) if pending else None
 
 
-def change(directory, home, project, key, enabled, revision, request_fn=None):
+def change(directory, home, project, key, enabled, revision, request_fn=None, path=None):
     if not isinstance(key, str) or type(enabled) is not bool or not isinstance(revision, str):
         raise ValueError("Неверные параметры переключателя.")
     request_fn = request_fn or discovery.request
@@ -121,15 +119,15 @@ def change(directory, home, project, key, enabled, revision, request_fn=None):
         card = read_json(Path(directory)/"inventory.json")["skills"].get(key)
         if card is None:
             raise ValueError("Навык не найден.")
-        before = state(card, home)
+        before = state(card, home, path=path)
         if not before["supported"]:
             raise ValueError(before["message"])
         if revision != before["revision"]:
             raise Conflict("Настройки Codex уже изменились. Переключатель обновлён; проверьте состояние и повторите действие.")
         if enabled == before["enabled"]:
             return {"saved": True, "unchanged": True, "activation": before}
-        path = target(card, home)
-        pending = {"activation_id": uuid.uuid4().hex, "skill_id": key, "skill_name": card["name"], "before_enabled": before["enabled"], "enabled": enabled}
+        path = target(card, home, path)
+        pending = {"activation_id": uuid.uuid4().hex, "skill_id": key, "skill_name": card["name"], "skill_path":str(path), "before_enabled": before["enabled"], "enabled": enabled}
         atomic_json(Path(directory)/PENDING, pending)
         explicit = read_json(Path(directory)/"settings.json", {}).get("codex_executable")
         write_error = False
@@ -138,7 +136,7 @@ def change(directory, home, project, key, enabled, revision, request_fn=None):
         except (OSError, RuntimeError, ValueError):
             # A timeout may follow a committed write. Read back before reporting.
             write_error = True
-        actual = state(card, home)
+        actual = state(card, home, path=path)
         verification = "not_checked"
         if actual["supported"] and actual["enabled"] == enabled:
             try:

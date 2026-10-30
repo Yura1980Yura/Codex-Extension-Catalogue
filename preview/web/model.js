@@ -70,7 +70,7 @@ export function componentsFor(addon,project=null){
  }
  // A disabled bundle also disables its skills in this context. It does not remove files.
  const plugins=result.filter(c=>c.kind==='plugin');
- if(plugins.length&&plugins.every(c=>c.enabled===false))for(const c of result)if(c.kind==='skill')c.enabled=false;
+ if(plugins.length&&plugins.every(c=>c.enabled===false))for(const c of result)if(c.kind==='skill'){c.enabled=false;c.state_note='Плагин отключён. Этот навык остаётся недоступен, даже если его собственная установка разрешена.';}
  return result;
 }
 

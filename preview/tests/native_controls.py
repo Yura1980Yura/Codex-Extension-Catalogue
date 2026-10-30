@@ -9,6 +9,23 @@ class NativeSwitches(unittest.TestCase):
     tearDown = test_controls.Switches.tearDown
     payload = test_controls.Switches.payload
     rpc = test_controls.Switches.rpc
+    def test_codex_project_mcp_switch_preserves_user_config_and_approvals(self):
+        import discovery,json
+        project=self.root/'project';project.mkdir();project_file=project/'.codex/config.toml';project_file.parent.mkdir()
+        project_file.write_text('[mcp_servers.sample]\ncommand="unused"\nenabled=true\ndefault_tools_approval_mode="prompt"\n[plugins."sample@local"]\nenabled=true\n[apps.sample]\nenabled=true\ndefault_tools_approval_mode="prompt"\n')
+        self.file.write_text(self.file.read_text()+'\n[projects.'+json.dumps(str(project))+']\ntrust_level="trusted"\n')
+        original=self.file.read_bytes();self.snapshot['projects'][0]['path']=str(project)
+        self.control.request=discovery.request
+        for index,(field,name) in enumerate([('mcp_servers','sample'),('plugins','sample@local'),('apps','sample')]):
+            component=self.snapshot['addons'][0]['components'][index]
+            component['contexts']['p']={'scope':'local','installed':True,'enabled':True,'sources':[{'scope':'project','applied':True,'path':str(project_file)}]}
+            for enabled in (False,True):
+                control=self.control.decorate(self.snapshot)['addons'][0]['components'][index]['contexts']['p']['control']
+                result=self.control.change(self.snapshot,{'id':'addon','component_id':component['id'],'context':'p','enabled':enabled,'revision':control['revision']})
+                self.assertEqual(result['verification'],'codex_config_read')
+                self.assertEqual(tomllib.loads(project_file.read_text())[field][name]['enabled'],enabled)
+                self.assertEqual(tomllib.loads(project_file.read_text())['mcp_servers']['sample']['default_tools_approval_mode'],'prompt')
+                self.assertEqual(self.file.read_bytes(),original)
     def test_account_app_override_can_be_created_without_changing_other_apps(self):
         import discovery
         self.control.request=discovery.request
