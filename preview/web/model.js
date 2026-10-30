@@ -1,6 +1,6 @@
 export const typeNames={skill:'Навыки',mcp:'MCP',plugin:'Плагины',app:'Приложения',program:'Программы'};
 export const scopeNames={global:'Глобально',local:'Локально',unknown:'Область не уточнена'};
-export const origins={asemic:'Asemic',builtin:'От OpenAI',personal:'Мои разработки',third_party:'Других авторов',unknown:'Источник не уточнён'};
+export const origins={asemic:'55user3125',builtin:'От OpenAI',personal:'Мои разработки',third_party:'Других авторов',unknown:'Источник не уточнён'};
 const normal=p=>String(p||'').replaceAll('\\','/').replace(/\/$/,'').toLowerCase();
 const inside=(p,r)=>normal(p)===normal(r)||normal(p).startsWith(normal(r)+'/');
 export const values=v=>Array.isArray(v)?v:v?[v]:[];

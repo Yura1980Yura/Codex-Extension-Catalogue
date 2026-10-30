@@ -13,9 +13,9 @@
     "prepare": "Описание задачи; для обновления — доступ к локальным папкам",
     "dependencies": "Python 3.12+; для обнаружения — установленный Codex",
     "portability": "portable",
-    "origin_evidence": "Каталог и собственный навык разработаны Asemic.",
+    "origin_evidence": "Каталог и собственный навык разработаны 55user3125.",
     "source": {
-      "author": "Asemic",
+      "author": "55user3125",
       "repository": "Yura1980Yura/Codex-Extension-Catalogue"
     }
   },

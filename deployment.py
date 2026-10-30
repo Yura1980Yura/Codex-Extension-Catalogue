@@ -1,4 +1,4 @@
-"""Repeatable per-user installation of Codex Extension Catalogue by Asemic."""
+"""Repeatable per-user installation of Codex Extension Catalogue by 55user3125."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -122,8 +122,8 @@ def plan(bundle=ROOT,home=None,desktop=None,docs=None,port=None):
             raise ValueError('Прежний ярлык изменён пользователем; требуется проверка.')
     port=port if port is not None else (marker or {}).get('port',8772)
     if type(port) is not int or not 1024<=port<=65535:raise ValueError('Порт должен быть от 1024 до 65535.')
-    return {"application":APPLICATION,"product":NAME,"developer":"Asemic","version":read(Path(bundle)/"release.json")["version"],"port":port,
-            "origin":"Asemic","action":"unchanged" if marker and marker.get("bundle_id")==info["bundle_id"] and marker.get('application')==APPLICATION and marker.get('product')==NAME else "update" if marker else "install",
+    return {"application":APPLICATION,"product":NAME,"developer":"55user3125","version":read(Path(bundle)/"release.json")["version"],"port":port,
+            "origin":"55user3125","action":"unchanged" if marker and marker.get("bundle_id")==info["bundle_id"] and marker.get('application')==APPLICATION and marker.get('product')==NAME else "update" if marker else "install",
             "bundle_id":info["bundle_id"],"paths":paths}
 
 
@@ -268,7 +268,7 @@ def install(bundle=ROOT,home=None,offline=False,codex=None,desktop=None,docs=Non
         shutil.move(str(legacy_link),str(shortcut_backup))
     return {"installed":str(runtime),"skill":paths["skill"],"data":str(data),"work":str(work),"notes":str(documents),
             "launcher":marker["shortcut"],"files_verified":skill_result["files_verified"],"version":prepared["version"],
-            "product":NAME,"developer":"Asemic","origin":"Asemic","outcome":prepared["action"],
+            "product":NAME,"developer":"55user3125","origin":"55user3125","outcome":prepared["action"],
             "program_backup":str(program_backup) if program_backup else None,"previous_launcher_backup":str(shortcut_backup) if shortcut_backup else None}
 
 
@@ -306,7 +306,7 @@ def check(runtime=ROOT, refresh=False, open_browser=False, port=None):
             time.sleep(.4)
         if state.get("job",{}).get("state")=="error":raise ValueError("Сверка не завершена; прежний снимок сохранён.")
     own=[c for a in state.get("addons",[]) for c in a.get("components",[]) if c.get("name")=="skill-catalog"]
-    return {"url":read(work/"server.json")["url"],"product":NAME,"developer":"Asemic","version":state.get("version"),"origin":"Asemic",
+    return {"url":read(work/"server.json")["url"],"product":NAME,"developer":"55user3125","version":state.get("version"),"origin":"55user3125",
             "skill_confirmed":any(c.get("installed") for c in own),"skill_paths":[c.get("path") for c in own],
             "project_count":len(state.get("projects",[])),"last_checked":state.get("updated_at"),
             "source_coverage":state.get("coverage",{}).get("reconciliation",{})}

@@ -86,7 +86,7 @@ class Deployment(unittest.TestCase):
         self.assertEqual(note.read_text('utf-8'),'Keep notes')
         self.assertFalse(legacy_link.exists());self.assertTrue(Path(upgraded['previous_launcher_backup']).exists())
         self.assertEqual(Path(upgraded['launcher']).stem,d.NAME)
-        self.assertEqual(d.installation(legacy_runtime)['developer'],'Asemic')
+        self.assertEqual(d.installation(legacy_runtime)['developer'],'55user3125')
         self.assertEqual(d.installation(legacy_runtime)['product'],'Codex Extension Catalogue')
         self.assertEqual(self.install()['outcome'],'unchanged')
 
@@ -99,7 +99,8 @@ class Deployment(unittest.TestCase):
 
     def test_custom_profile_is_respected_for_real_home_only(self):
         custom=self.home/'custom-profile'
-        with patch.dict(os.environ,{'CODEX_HOME':str(custom)}):
+        # This profile test must not read the developer machine's installed marker.
+        with patch.dict(os.environ,{'CODEX_HOME':str(custom)}), patch('deployment.installation',return_value=None):
             self.assertEqual(d.locations()['profile'],str(custom.resolve()))
             self.assertEqual(d.locations(self.home)['profile'],str(self.home/'.codex'))
 

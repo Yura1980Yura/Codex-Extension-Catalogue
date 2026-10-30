@@ -892,7 +892,7 @@
     },
     "resource:catalog": {
       "title": "Каталог надстроек Codex",
-      "provider": "Asemic",
+      "provider": "55user3125",
       "origin": "asemic",
       "description": "Локальный каталог навыков, ресурсов, подключений и проектов.",
       "capabilities": [
@@ -902,7 +902,7 @@
       ],
       "website": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
       "documentation": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
-      "integration_author": "Asemic",
+      "integration_author": "55user3125",
       "connection_method": "Локальная возможность",
       "connection_documentation": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue",
       "connection_requirements": [
