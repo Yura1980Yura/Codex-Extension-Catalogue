@@ -32,7 +32,7 @@ def main():
     else:
         state=api.request_api(paths["work"])
         if args.action=="status":
-            result={k:state.get(k) for k in ("product","developer","version","updated_at","coverage","job","projects")}
+            result={k:state.get(k) for k in ("product","developer","version","updated_at","coverage","documentation_audit","repository_sources","job","projects")}
         elif args.action=="list":
             result=[{"id":a["id"],"title":a["title"],"origin":a.get("origin"),"components":[{k:c.get(k) for k in ("kind","scope","installed","enabled","path")} for c in a.get("components",[])]} for a in state.get("addons",[])]
         else:

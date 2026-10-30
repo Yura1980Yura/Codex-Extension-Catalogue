@@ -156,6 +156,10 @@ def collect(settings, work):
         directions = resource_view['directions']
         sources, source_documents = scan(definitions(settings, projects, overlay))
         integrate(addons, projects, sources['rows'], source_documents, instructions)
+        from presentation import enrich
+        from skill_repositories import indexes
+        repositories=indexes(read(data/'settings.json',{}),work)
+        documentation_audit=enrich(addons,instructions,catalog.skill_package,repositories,directions)
         # A file is a finding until a fresh Codex discovery confirms this path.
         for addon in addons:
             for component in addon['components']:
@@ -171,6 +175,8 @@ def collect(settings, work):
         release = read(ROOT/'release.json', {})
         result = {'product':release.get('name'),'developer':release.get('developer'),'version': read(ROOT/'release.json', {}).get('version', 'unknown'), 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
+            'documentation_audit':documentation_audit,
+            'repository_sources':[{k:v.get(k) for k in ('repository','status','checked_at','warning')} for v in repositories.values()],
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),
             'coverage': {'discovery': inventory.get('discovery_status'), 'session_at': session.get('observed_at'), 'reconciliation': reconciliation,

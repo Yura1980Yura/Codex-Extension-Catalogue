@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "name": "skill-catalog",
+  "title_ru": "Каталог надстроек Codex",
+  "instruction_language": "ru",
+  "origin": "asemic",
+  "helps": "Показывает надстройки текущего Codex, их реальные источники и документацию; помогает выбрать имеющиеся навыки и вести пожелания.",
+  "dependencies": "Python 3.12+, локальный Codex с app-server и браузер. GitHub CLI нужен только для проверки дополнительно настроенных репозиториев.",
+  "source": {
+    "author": "55user3125",
+    "repository": "Yura1980Yura/Codex-Extension-Catalogue",
+    "url": "https://github.com/Yura1980Yura/Codex-Extension-Catalogue/tree/codex/catalog-v2/app/skill-catalog"
+  },
+  "tags": ["каталог", "навыки Codex", "документация"],
+  "documentation": [
+    {"id": "README.md", "title": "Возможности, требования и установка"},
+    {"id": "references/resources.md", "title": "Совместимость: ресурсы и подключения прежнего каталога"}
+  ]
+}

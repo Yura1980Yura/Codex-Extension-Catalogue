@@ -917,6 +917,71 @@
       "data_access": "Локальные файлы или ресурсы, явно выбранные для задачи.",
       "pricing": "Расходы зависят от выбранного способа работы.",
       "reviewed_at": "2026-10-27"
+    },
+    "mcp:serena": {
+      "title": "Serena",
+      "origin": "third_party",
+      "provider": "oraios / Serena",
+      "integration_author": "oraios",
+      "description": "Средства анализа и изменения исходного кода с пониманием символов и связей проекта.",
+      "capabilities": [
+        "Навигация по символам кода",
+        "Поиск связей и использований",
+        "Поддержка работы агента с кодовой базой"
+      ],
+      "website": "https://github.com/oraios/serena",
+      "documentation": "https://github.com/oraios/serena/tree/main/docs",
+      "connection_documentation": "https://github.com/oraios/serena/blob/main/docs/02-usage/020_running.md",
+      "connection_method": "MCP-сервер Serena",
+      "connection_requirements": [
+        "uv и требования используемых языковых серверов по официальной инструкции."
+      ],
+      "connection_steps": [
+        "Прочитайте актуальную установку Serena.",
+        "Настройте выбранный проект и способ запуска MCP в Codex.",
+        "Сверьте состояние подключения с Codex."
+      ],
+      "evidence": "Официальный репозиторий oraios/serena и его документация. Проверено 30.10.2026.",
+      "reviewed_at": "2026-10-30",
+      "billing": "unknown",
+      "tags": [
+        "анализ кода",
+        "навигация по коду",
+        "MCP"
+      ]
+    },
+    "mcp:semgrep": {
+      "title": "Semgrep",
+      "origin": "third_party",
+      "provider": "Semgrep, Inc.",
+      "integration_author": "Semgrep",
+      "description": "Статический анализ кода и проверки по правилам Semgrep через MCP.",
+      "capabilities": [
+        "Поиск проблем в исходном коде",
+        "Проверки безопасности",
+        "Применение правил статического анализа"
+      ],
+      "website": "https://semgrep.dev/",
+      "documentation": "https://github.com/semgrep/semgrep",
+      "connection_documentation": "https://github.com/semgrep/semgrep",
+      "connection_method": "MCP-сервер в актуальной поставке Semgrep",
+      "connection_requirements": [
+        "Текущая поставка Semgrep и доступ к выбранной кодовой базе.",
+        "Для функций платформы могут требоваться отдельный аккаунт и права."
+      ],
+      "connection_steps": [
+        "Используйте актуальную документацию основного репозитория semgrep/semgrep.",
+        "Настройте поддерживаемый способ запуска MCP в Codex.",
+        "Сверьте состояние подключения с Codex."
+      ],
+      "evidence": "Официальный semgrep/semgrep. Прежний semgrep/mcp архивирован; документация перенесена в основной проект. Проверено 30.10.2026.",
+      "reviewed_at": "2026-10-30",
+      "billing": "unknown",
+      "tags": [
+        "статический анализ",
+        "безопасность кода",
+        "MCP"
+      ]
     }
   }
 }

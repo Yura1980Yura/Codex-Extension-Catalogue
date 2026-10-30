@@ -1,6 +1,17 @@
-function documentationHTML(skills,esc){
- const rows=skills.flatMap(s=>(s.documentation||[]).map(d=>`<button class="quiet" data-skill-document="${esc(s.id)}" data-document="${esc(d.id)}">${esc(d.title)}</button>`));
- return rows.length?`<section class="detail-section"><h2>Документация навыка</h2><div class="links">${rows.join('')}</div></section>`:'';
+function documentationHTML(addon,parts){
+ const skills=addon.skills||[],profile=addon.profile||{};
+ let html=instructionActions(parts,addon);
+ for(const skill of skills){
+  const docs=skill.documentation||[];
+  if(docs.length)html+=section(skills.length>1?'Документы · '+(skill.title_ru||skill.name):'Документы навыка',`<div class="documentation-list">${docs.map(d=>`<button type="button" class="documentation-item" data-skill-document="${esc(skill.id)}" data-document="${esc(d.id)}">${icon('notes')}<span><strong>${esc(d.title)}</strong><small>${esc(d.id)}</small></span>${icon('chevron')}</button>`).join('')}</div>`);
+  else if(skill.instruction_available!==false)html+=`<p class="tiny">${skills.length>1?esc(skill.title_ru||skill.name)+': ':''}Дополнительных документов в пакете нет. Основной документ — инструкция навыка.</p>`;
+  if(skill.documentation_issues?.length)html+=section('Материалы требуют внимания',`<ul class="documentation-issues">${skill.documentation_issues.map(issue=>`<li>${esc(issue.id)}: ${esc(issue.reason)}</li>`).join('')}</ul>`);
+ }
+ const seenLinks=new Set();const links=[[profile.documentation,'Документация сервиса'],[profile.connection_documentation,'Подключение'],[profile.website,'Сайт поставщика']].filter(([url])=>url&&!seenLinks.has(url)&&seenLinks.add(url)).map(([url,label])=>link(url,label)).filter(Boolean);
+ const authorLinks=skills.map(skill=>{const author=skill.author_profile||{};const heading=skills.length>1?skill.title_ru||skill.name:author.name!==profile.provider?author.name||'Автор не указан':'';return `<div class="documentation-provider">${heading?`<strong>${esc(heading)}</strong>`:''}${skills.length>1&&author.name?`<p class="tiny">Автор: ${esc(author.name)}</p>`:''}<div class="links">${(author.links||[]).map(l=>link(l.url,l.label)).join('')}</div>${skill.repository_evidence?`<p class="tiny">${esc(skill.repository_evidence)}</p>`:''}</div>`;}).join('');
+ html+=section('Поставщик и документация',textList(profile.provider)+`<div class="links">${[...new Set(links)].join('')}</div>`+authorLinks);
+ if(profile.connection_steps?.length)html+=section('Как подключается',textList(profile.connection_method)+textList(profile.connection_requirements)+textList(profile.connection_steps));
+ return html;
 }
 
 import {renderGuide} from './guide.js';
@@ -112,7 +123,7 @@ function componentHTML(c,showControl=true){
  const enabled=c.enabled===true?'Включено':c.enabled===false?'Отключено':'Включение не проверено';
  const details=[c.version?`<p>Версия: ${esc(c.version)}</p>`:'',c.fingerprint?`<p>Отпечаток версии: <code>${esc(c.fingerprint)}</code></p>`:''].join('');
  const seen=(c.observations||[]).filter(o=>o.kind==='session');
- return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}<div class="component-invocations">${c.kind==='skill'?`<button class="quiet" data-instruction="${esc(c.skill_id)}">Прочитать инструкцию</button>`:''}${promptMenuHTML(callsFor(data.addons.find(a=>a.components.some(part=>part.id===c.id))||{skills:[],title:c.title||c.name},[c],{skillId:c.kind==='skill'?c.skill_id:undefined}),esc)}</div>${showControl?controlHTML(c,true)+skillManagementHTML([c],esc):''}${details?`<details><summary>Версия и проверка</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
+ return `<article class="component"><div class="component-header"><strong>${esc(c.title||c.name)}</strong><span class="badge ${c.kind}">${({skill:'Навык',mcp:'MCP',plugin:'Плагин',app:'Приложение',program:'Программа'})[c.kind]||esc(c.kind)}</span></div><div class="component-status"><span class="scope scope-${esc(c.scope||'unknown')}">${esc(scopeNames[c.scope]||'Не уточнено')}${projectName?' · '+esc(projectName):''}</span><span>· ${installed}</span><span>· ${enabled}</span></div>${c.connection?.reason?`<p>${esc(c.connection.label)}. ${esc(c.connection.reason)}</p>`:''}${c.basis?`<p>${esc(c.basis)}</p>`:''}${seen.length?`<p>В метаданных этого чата: ${esc(date(seen.at(-1).at))}. Это свидетельство доступности на указанную дату.</p>`:''}${c.restriction?`<div class="soft-note amber">${esc(c.restriction)}</div>`:''}${c.approval?`<p>Запрос разрешения: ${esc(c.approval==='prompt'?'перед операцией':c.approval==='default'?'по настройкам Codex':c.approval)}.</p>`:''}${c.policy&&c.policy!=='inherit'?`<p>Правило в каталоге: ${esc(({explicit:'только по явной команде',ask:'с подтверждением операции',blocked:'не использовать'})[c.policy]||c.policy)}. Это заметка о применении, не изменение разрешений.</p>`:''}${showControl?controlHTML(c,true)+skillManagementHTML([c],esc):''}${details?`<details><summary>Версия и проверка</summary>${details}${c.checked_at?`<p>Сверено ${esc(date(c.checked_at,true))}</p>`:''}</details>`:''}</article>`;
 }
 function controlHTML(c,explain=false){
  const control=c.control;
@@ -163,12 +174,12 @@ function overviewHTML(a,parts){
  const profile=a.profile||{},overlay=data.overlay.items[a.id]||{};
  const meta=metadataFor(a,overlay);
  const purposes=meta.directions.map(id=>data.directions.find(d=>d.id===id)?.title||id);
- let html=`<div class="info-grid"><div class="info-cell"><small>Область</small>${scopeHTML(parts)}</div><div class="info-cell"><small>Происхождение</small>${esc(meta.origins.map(v=>origins[v]||v).join(', ')||'Не указано')}</div><div class="info-cell"><small>Назначение</small>${esc(purposes.join(', ')||'Пока не указано')}</div><div class="info-cell"><small>Расходы</small>${esc(meta.billings.map(v=>bills[v]||v).join(', ')||'Не указаны')}</div></div>`;
- html+=instructionActions(parts,a);
- html+=`<p class="tiny">Добавлено в каталог: ${a.added_at?esc(date(a.added_at,true)):'дата не была сохранена'}</p>`+metadataEditor(meta);
- html+=controlsHTML(parts);
+ const property=(field,title,value)=>`<button type="button" class="info-cell editable-property" data-property="${field}" aria-label="Настроить ${title.toLocaleLowerCase()}" aria-haspopup="dialog"><small>${title}</small><span class="property-pencil" aria-hidden="true">✎</span><span>${esc(value)}</span></button>`;
+ let html=singleControl(parts)?`<section class="overview-management"><div class="overview-control"><h2>Использовать в Codex</h2>${switchHTML(parts[0],esc,filters.project||'all')}</div>${skillManagementHTML(parts,esc,false)}<p class="tiny">${esc(controlGuidance)}</p><p class="control-result" role="status"></p></section>`:parts.length>1?section('Использовать в Codex','<button type="button" class="secondary" data-open-composition>Включение частей '+icon('chevron')+'</button>'):controlsHTML(parts);
+ html+=`<div class="info-grid"><div class="info-cell readonly-property"><small>Область</small>${scopeHTML(parts)}<span class="tiny">Определяется установкой в Codex</span></div>${property('origins','Происхождение',meta.origins.map(v=>origins[v]||v).join(', ')||'Источник не уточнён')}${property('directions','Назначение',purposes.join(', ')||'Пока не указано')}${property('billings','Расходы',meta.billings.map(v=>bills[v]||v).join(', ')||'Расходы не уточнены')}</div>`;
+ html+=`<button type="button" class="info-cell editable-property tags-property" data-property="tags" aria-label="Редактировать теги" aria-haspopup="dialog"><small>Теги</small><span class="property-pencil" aria-hidden="true">✎</span><span class="tag-list">${meta.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')||'<span class="tiny">Добавить теги</span>'}</span></button><p class="tiny added-date">Добавлено в каталог: ${a.added_at?esc(date(a.added_at,true)):'дата не была сохранена'}</p>`;
  if(profile.capabilities?.length)html+=section('Что умеет',textList(profile.capabilities));
- if(profile.example)html+=section('Примеры из карточки',promptMenuHTML(callsFor(a,parts,{examplesOnly:true}),esc));
+
  for(const s of a.skills){
   html+=section(a.skills.length>1?s.title_ru||s.name:'Как помогает',textList(s.helps||s.description_ru||s.description_original||s.description));
   html+=(s.capability_groups||[]).map(g=>section(g.title,textList(g.text))).join('');
@@ -180,29 +191,33 @@ function overviewHTML(a,parts){
  if(a.bindings.length)html+=section('Записанные связи с проектами',a.bindings.map(b=>`<p><strong>${esc(b.project_name)}</strong>: ${esc(b.purpose)}<br><span class="tiny">${esc(({recommended:'Рекомендация',codex_use:'Записано использование в Codex',runtime:'Записана интеграция'})[b.role]||b.role)}${b.evidence?' · '+esc(b.evidence):''}</span></p>`).join(''));
  const related=a.related.map(id=>data.addons.find(x=>x.id===id)).filter(Boolean);
  if(related.length)html+=section('Полезно вместе',`<p>Связанные возможности; они не входят автоматически в состав этой надстройки.</p><div class="links">${related.map(r=>`<button class="secondary" data-related="${esc(r.id)}">${esc(r.title)}</button>`).join('')}</div>`);
- html+=section('Теги',`<div class="tag-list">${meta.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')||'<span class="tiny">Пока нет тегов.</span>'}</div><form class="note-form" id="tags-form"><label for="tags-input">Редактировать теги</label><p class="tiny">Здесь весь список. Добавляйте, переименовывайте или удаляйте теги через запятую. Ваши правки сохраняются при сверке.</p><input id="tags-input" value="${esc(meta.tags.join(', '))}" placeholder="Через запятую"><button class="secondary" type="submit">Сохранить теги</button><p class="error" role="alert"></p></form>`);
- return html+documentationHTML(a.skills||[],esc);
+ return html;
 }
-function sourcesHTML(a,parts){const p=a.profile||{};return documentationHTML(a.skills||[],esc)+sourceEvidenceHTML(parts)+section('Поставщик и документация',textList(p.provider)+textList(p.integration_author)+`<div class="links">${link(p.website,'Сайт')}${link(p.documentation,'Документация')}${link(p.connection_documentation,'Подключение')}</div>`)+section('Основание описания',textList(p.evidence))+a.skills.map(s=>section(s.title_ru||s.name,`<p>Автор: ${esc(s.author_profile?.name||'Не указан')}</p><div class="links">${(s.author_profile?.links||[]).map(l=>link(l.url,l.label)).join('')}</div>${textList(s.origin_evidence)}<p class="tiny">Русская инструкция: ${esc(s.instruction_localization?.message||'Нет сведений')}</p>`)).join('')+section('Как подключается',textList(p.connection_method)+textList(p.connection_requirements)+textList(p.connection_steps)+textList(p.reviewed_at?'Описание проверено: '+date(p.reviewed_at):''))+section('Границы проверки',`<p>Области и включение проверяются по настройкам. Успешное применение к задаче показывается только при наличии отдельной записи.</p><p>Каталог показывает настройки Codex. Подтверждённые личные навыки и пользовательские настройки MCP, плагинов и приложений можно включать и отключать в карточке. Пути и открытие папок находятся только в «Источниках». Подключение и удаление навыка — рядом с управлением «Использовать в Codex»; перед удалением каталог показывает точный файл и запрашивает подтверждение. Доступ к аккаунтам и разрешения операций здесь не меняются.</p>`);}
+function sourcesHTML(a,parts){const p=a.profile||{};return sourceEvidenceHTML(parts)+section('Основание описания',textList(p.evidence))+a.skills.map(s=>section(s.title_ru||s.name,`<p>Автор: ${esc(s.author_profile?.name||'Не указан')}</p>${textList(s.origin_evidence)}<p class="tiny">Русская инструкция: ${esc(s.instruction_localization?.message||'Нет сведений')}</p>`)).join('')+section('Как подключается',textList(p.connection_method)+textList(p.connection_requirements)+textList(p.connection_steps)+textList(p.reviewed_at?'Описание проверено: '+date(p.reviewed_at):''))+section('Границы проверки',`<p>Области и включение проверяются по настройкам. Успешное применение к задаче показывается только при наличии отдельной записи.</p><p>Каталог показывает настройки Codex. Подтверждённые личные навыки и пользовательские настройки MCP, плагинов и приложений можно включать и отключать в карточке. Пути и открытие папок находятся только в «Источниках». Подключение и удаление навыка — рядом с управлением «Использовать в Codex»; перед удалением каталог показывает точный файл и запрашивает подтверждение. Доступ к аккаунтам и разрешения операций здесь не меняются.</p>`);}
 function notesHTML(a){const item=data.overlay.items[a.id]||{};return section('Мои заметки',`<div class="notes-list">${a.notes.map(n=>`<div class="note">${esc(n)}<small>Из прежнего каталога</small></div>`).join('')}${(item.notes||[]).map(n=>`<div class="note">${esc(n.text)}<small>${esc(date(n.at,true))} · новый вариант</small></div>`).join('')}${!a.notes.length&&!item.notes?.length?'<p>Здесь можно сохранить своё наблюдение об этой надстройке.</p>':''}</div>${noteForm('note','Новая заметка')}`)+section('Проверенный опыт',a.skills.flatMap(s=>(s.verified_experience||[]).map(e=>`<div class="note">${esc(e.task||'Применение')}<p>${esc(e.result||'')}</p><small>${esc(e.date||'')} ${esc(e.limitations||'')}</small></div>`)).join('')||'<p>Записанного опыта пока нет. Это не означает, что надстройку никогда не использовали.</p>')+section('Опыт других версий',textList(a.skills.flatMap(s=>(s.historical_experience||[]).map(e=>(e.task||'Применение')+' — '+(e.result||'')))))+section('История этой надстройки',eventsHTML(a));}
 function noteForm(action,label){return `<form class="note-form" data-note-action="${action}"><label for="note-text">${label}</label><textarea id="note-text" required maxlength="20000" placeholder="Ваш текст…"></textarea><div class="actions"><span class="tiny">Личная запись сохранится на этом компьютере.</span><button class="primary" type="submit">Сохранить ${action==='wish'?'пожелание':'заметку'}</button></div><p class="error" role="alert"></p></form>`;}
 function openAddon(id,tab='overview'){
- const a=data.addons.find(a=>a.id===id);if(!a)return;selected=id;detailTab=tab;const parts=componentsFor(a,project()).filter(c=>page!=='found'||c.kind==='skill'&&c.file_found&&!c.installed);
- $('#detail-content').innerHTML=`<header class="drawer-head"><span>${esc(project()?.name||'Весь Codex')} / Надстройка</span><div class="drawer-top-actions"><div class="drawer-management">${headerControlHTML(parts,esc,filters.project||'all')}${singleControl(parts)?skillManagementHTML(parts,esc,false):''}</div><button class="icon-button" id="close-detail" aria-label="Закрыть карточку">${icon('close')}</button></div></header><div class="drawer-body"><div class="drawer-title"><span class="addon-mark ${primaryKind(parts)}">${icon(primaryKind(parts))}</span><div><h1 id="detail-title">${esc(a.title)}</h1><div class="composition">${composition(parts)}</div></div></div><p class="drawer-intro">${esc(a.description)}</p>${singleControl(parts)?`<p class="tiny control-guidance">${esc(controlGuidance)}</p>${controlContextNote(parts[0])?`<p class="soft-note amber">${esc(controlContextNote(parts[0]))}</p>`:''}<p class="control-result" role="status"></p>`:''}<div class="drawer-tabs" role="group" aria-label="Раздел карточки">${[['overview','Обзор'],['composition','Состав · '+parts.length],['notes','Заметки и опыт'],['sources','Источники']].map(([k,v])=>`<button data-tab="${k}" aria-pressed="${detailTab===k}">${v}</button>`).join('')}</div><div id="drawer-panel">${detailTab==='overview'?overviewHTML(a,parts):detailTab==='composition'?`<p class="tiny">Каждая часть имеет свою область и состояние. Типы в фильтрах соответствуют этому составу.</p>${parts.map(c=>componentHTML(c,!singleControl(parts))).join('')||'<p>Действующая установка не обнаружена. Это справочная карточка.</p>'}<p class="control-result" role="status"></p>`:detailTab==='notes'?notesHTML(a):sourcesHTML(a,parts)}</div></div>`;
+ const a=data.addons.find(a=>a.id===id);if(!a)return;selected=id;const parts=componentsFor(a,project()).filter(c=>page!=='found'||c.kind==='skill'&&c.file_found&&!c.installed);
+ if(tab==='composition'&&parts.length<2)tab='documentation';detailTab=tab;
+ $('#detail-content').innerHTML=`<header class="drawer-head"><span>${esc(project()?.name||'Весь Codex')} / Надстройка</span><div class="drawer-top-actions"><button class="icon-button" id="close-detail" aria-label="Закрыть карточку">${icon('close')}</button></div></header><div class="drawer-body"><div class="drawer-title"><span class="addon-mark ${primaryKind(parts)}">${icon(primaryKind(parts))}</span><div><h1 id="detail-title">${esc(a.title)}</h1><div class="composition">${composition(parts)}</div></div></div><p class="drawer-intro">${esc(a.description)}</p><div class="drawer-tabs" role="tablist" aria-label="Раздел карточки">${[['overview','Обзор'],['documentation','Документация'],...(parts.length>1?[['composition','Состав · '+parts.length]]:[]),['notes','Заметки и опыт'],['sources','Источники']].map(([k,v])=>`<button type="button" role="tab" id="detail-tab-${k}" data-tab="${k}" aria-controls="drawer-panel" aria-selected="${detailTab===k}" tabindex="${detailTab===k?0:-1}">${v}</button>`).join('')}</div><div id="drawer-panel" role="tabpanel" aria-labelledby="detail-tab-${detailTab}">${detailTab==='overview'?overviewHTML(a,parts):detailTab==='documentation'?documentationHTML(a,parts):detailTab==='composition'?`<p class="tiny">Каждая часть имеет свою область и состояние. Типы в фильтрах соответствуют этому составу.</p>${parts.map(c=>componentHTML(c,!singleControl(parts))).join('')||'<p>Действующая установка не обнаружена. Это справочная карточка.</p>'}<p class="control-result" role="status"></p>`:detailTab==='notes'?notesHTML(a):sourcesHTML(a,parts)}</div></div>`;
  $('#close-detail').onclick=()=>closeDialog($('#details'));
  bindSkillFileTools({data,addon:a,parts,api,esc,readPanel,toast,closeReader:()=>closeDialog($('#reader')),acceptState:next=>{data=next;renderPage();if($('#details').open)openAddon(id,tab);}});
- document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>openAddon(id,b.dataset.tab));
+ document.querySelectorAll('[data-tab]').forEach(b=>{
+  const activate=name=>{openAddon(id,name);document.querySelector(`[data-tab="${name}"]`)?.focus({preventScroll:true});};
+  b.onclick=()=>activate(b.dataset.tab);
+  b.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=[...document.querySelectorAll('[data-tab]')],index=tabs.indexOf(b);const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activate(tabs[next].dataset.tab);};
+ });
  document.querySelectorAll('[data-related]').forEach(b=>b.onclick=()=>openAddon(b.dataset.related));
  bindInstructionActions();
  bindControls();
 
  bindNotes(id);
  bindMetadata(id);bindSourceFolders(id);
- if($('#tags-form'))$('#tags-form').onsubmit=async e=>{e.preventDefault();try{await save(id,'tags',{text:$('#tags-input').value});}catch(error){$('#tags-form .error').textContent=error.message;}};
+ const manage=$('[data-open-composition]');if(manage)manage.onclick=()=>{openAddon(id,'composition');$('#details [data-tab=composition]')?.focus();};
  if(!$('#details').open)showDialog($('#details'));
 }
 function bindNotes(id){document.querySelectorAll('[data-note-action]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;try{await save(id,form.dataset.noteAction,{text:form.querySelector('textarea').value});}catch(error){form.querySelector('.error').textContent=error.message;}finally{b.disabled=false;}});}
-async function save(id,action,extra){data.overlay=await api('annotate',{id,action,revision:data.overlay.revision,...extra});toast('Сохранено.');if(['all','project','favorites'].includes(page))paintGrid();else renderPage();if($('#details').open)openAddon(selected,detailTab);}
+async function save(id,action,extra,revision=data.overlay.revision){data.overlay=await api('annotate',{id,action,revision,...extra});toast('Сохранено.');if(['all','project','favorites'].includes(page))paintGrid();else renderPage();if($('#details').open)openAddon(selected,detailTab);}
 const eventNames={preview_order:'Изменён порядок карточек',preview_project:'Добавлен проект',preview_note:'Добавлена заметка',preview_favorite:'Изменено избранное',preview_tags:'Изменены теги',preview_metadata:'Изменены свойства надстройки',preview_wish:'Записано пожелание',inventory_refreshed:'Сверены установки',skill_note_added:'Добавлена заметка к навыку',note_added:'Добавлена заметка',search_started:'Начат поиск навыков',search_completed:'Сохранена подборка',operation_started:'Начата операция',operation_completed:'Завершена операция',skill_activation_changed:'Изменено включение навыка',skill_activation_unconfirmed:'Переключение навыка не подтверждено',extension_activation_changed:'Изменено включение надстройки',extension_activation_unconfirmed:'Переключение надстройки не подтверждено',resource_catalog_changed:'Изменена карточка ресурса',organization_changed:'Изменена классификация',directions_changed:'Изменены направления',project_catalog_changed:'Изменены сведения проекта',manager_favorite_changed:'Изменено избранное'};
 eventNames.wish_created='Записано пожелание';eventNames.wish_updated='Обновлено пожелание';
 eventNames.preview_project_folder='Изменена папка проекта';
@@ -281,20 +296,30 @@ function positionMulti(el){el.classList.remove('align-right');if(el.querySelecto
 window.addEventListener('resize',()=>document.querySelectorAll('.multi[open]').forEach(positionMulti));
 function instructionActions(parts,addon){
  const skills=[...new Map(parts.filter(c=>c.kind==='skill'&&c.skill_id).map(c=>[c.skill_id,c])).values()];
- return `<div class="instruction-actions" aria-label="Инструкции и вызовы"><div class="links">${skills.map(c=>`<button class="secondary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию${skills.length>1?' · '+esc(c.title||c.name):''}</button>`).join('')}</div>${promptMenuHTML(callsFor(addon,parts),esc)}</div>`;
+ if(!skills.length)return callsFor(addon,parts).length?`<section class="section"><h2>Применение</h2><button type="button" class="secondary" data-open-calls>${icon('copy')}Скопировать вызов</button></section>`:'';
+ return skills.map(c=>{const skill=addon.skills.find(s=>s.id===c.skill_id)||{},readable=skill.instruction_available!==false;return `<section class="section documentation-actions"><h2>${esc(skills.length>1?skill.title_ru||c.title||c.name:'Инструкция и вызов')}</h2><div class="links">${readable?`<button type="button" class="primary" data-instruction="${esc(c.skill_id)}">${icon('notes')}Прочитать инструкцию</button>`:'<p class="tiny">Инструкция этой установки недоступна. Выполните сверку с Codex.</p>'}<button type="button" class="secondary" data-open-calls="${esc(c.skill_id)}">${icon('copy')}Скопировать вызов</button></div></section>`;}).join('');
 }
+
 async function copyInvocation(id){
  const name=data.addons.flatMap(a=>a.skills||[]).find(s=>s.id===id)?.name||id;
  try{await navigator.clipboard.writeText(invocationFor(data.addons,id));toast('Вызов навыка скопирован.');}
  catch{readPanel('Вызов навыка · '+name,`<p>Скопируйте текст вручную:</p><textarea readonly aria-label="Вызов навыка">${esc(invocationFor(data.addons,id))}</textarea>`);$('#reader-actions').innerHTML='';}
 }
 function bindInstructionActions(){
+ document.querySelectorAll('[data-open-calls]').forEach(button=>button.onclick=()=>{
+  const addon=data.addons.find(a=>a.id===selected),parts=componentsFor(addon,project());
+  const rows=callsFor(addon,parts,button.dataset.openCalls?{skillId:button.dataset.openCalls}:{});
+  readPanel('Скопировать вызов',`<div class="prompt-dialog">${promptMenuHTML(rows,esc)}</div>`);
+  const menu=$('#reader-content .invocation-menu');if(menu)menu.open=true;
+  bindPromptMenus($('#reader-content'),{copy:value=>navigator.clipboard.writeText(value),toast});
+ });
  document.querySelectorAll('[data-skill-document]').forEach(b=>b.onclick=async()=>{
   try{
    const i=await api('instruction?id='+encodeURIComponent(b.dataset.skillDocument)),doc=i.documents?.[b.dataset.document];
    if(!doc)throw new Error('Документ недоступен. Выполните сверку с Codex.');
-   readPanel(doc.title,`<p class="tiny"><span class="path">${esc(doc.path)}</span></p>${markdown(doc.text)}`);
+   readPanel(doc.title,`<p class="tiny"><span class="path">${esc(doc.path)}</span></p>${markdown(doc.text,{documents:i.documents,currentDocument:b.dataset.document})}`);
    $('#reader-actions').innerHTML='';
+   bindDocumentNavigation(i);
   }catch(e){toast(e.message);}
  });
  document.querySelectorAll('[data-instruction]').forEach(b=>b.onclick=async()=>{
@@ -302,14 +327,21 @@ function bindInstructionActions(){
    const id=b.dataset.instruction,i=await api('instruction?id='+encodeURIComponent(id));
    const skill=data.addons.flatMap(a=>componentsFor(a,project())).find(c=>c.skill_id===id);
    const show=original=>{
-    readPanel('Инструкция · '+(skill?.title||skill?.name||''),`<p class="tiny">${!original&&i.translation?'Русский текст, сверенный с оригиналом':'Оригинал'} · <span class="path">${esc(i.path)}</span></p>${markdown(!original&&i.translation?i.translation:i.text)}`);
-    $('#reader-actions').innerHTML=`${i.translation?`<button class="quiet" id="instruction-language">${original?'Русский текст':'Оригинал'}</button>`:''}${promptMenuHTML(callsFor(data.addons.find(a=>a.skills?.some(s=>s.id===id))||{skills:[],title:skill?.title||skill?.name},[skill].filter(Boolean),{skillId:id}),esc)}`;
-    bindPromptMenus($('#reader-actions'),{copy:value=>navigator.clipboard.writeText(value),toast});
+    readPanel('Инструкция · '+(skill?.title||skill?.name||''),`<p class="tiny">${!original&&i.translation?'Русский текст, сверенный с оригиналом':'Оригинал'} · <span class="path">${esc(i.path)}</span></p>${markdown(!original&&i.translation?i.translation:i.text,{documents:i.documents})}`);
+    bindDocumentNavigation(i);
+    $('#reader-actions').innerHTML=i.translation?`<button class="secondary" id="instruction-language">${original?'Русский текст':'Оригинал'}</button>`:'';
     if($('#instruction-language'))$('#instruction-language').onclick=()=>show(!original);
    };show(false);
   }catch(e){toast(e.message);}
  });
  bindPromptMenus($('#detail-content'),{copy:value=>navigator.clipboard.writeText(value),toast});
+}
+function bindDocumentNavigation(instruction){
+ $('#reader-content').querySelectorAll('[data-document-target]').forEach(button=>button.onclick=()=>{
+  const key=button.dataset.documentTarget,doc=instruction.documents?.[key];if(!doc)return;
+  readPanel(doc.title,`<p class="tiny"><span class="path">${esc(doc.path)}</span></p>${markdown(doc.text,{documents:instruction.documents,currentDocument:key})}`);
+  bindDocumentNavigation(instruction);
+ });
 }
 const immediateDialog=()=>lastInput==='keyboard'||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function showDialog(dialog){openNativeDialog(dialog,immediateDialog());}
@@ -324,8 +356,8 @@ for(const dialog of document.querySelectorAll('dialog')){
 function setMenu(open){$('#sidebar').classList.toggle('no-motion',lastInput==='keyboard');$('#sidebar').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',open);$('#sidebar-shade').hidden=!open;$('.workspace').inert=open&&matchMedia('(max-width:760px)').matches;if(open&&lastInput==='keyboard')$('#navigation a').focus();}
 window.addEventListener('resize',()=>{if(innerWidth>760&&$('#sidebar').classList.contains('open'))setMenu(false);});
 $('#sidebar-shade').onclick=()=>setMenu(false);
-document.addEventListener('click',e=>document.querySelectorAll('.invocation-menu[open],.multi[open],.tile-control-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.invocation-menu[open],.multi[open],.tile-control-menu[open]');if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
+document.addEventListener('click',e=>document.querySelectorAll('.invocation-menu[open],.multi[open],.tile-control-menu[open]').forEach(d=>{if(!d.closest('.prompt-dialog')&&!d.contains(e.target))d.open=false;}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=[...document.querySelectorAll('.invocation-menu[open],.multi[open],.tile-control-menu[open]')].find(el=>!el.closest('.prompt-dialog')&&(!$('#reader').open||$('#reader').contains(el)));if(open){open.open=false;open.querySelector('summary').focus();e.preventDefault();}}});
 
 function fullOrder(rows){
  const saved=data.overlay.orders?.[filters.project||'all']||[];
@@ -401,15 +433,36 @@ function bindSourceFolders(id){
   catch(error){toast(error.message);}finally{button.disabled=false;}
  });
 }
-function metadataEditor(meta){
- const fields=[['origins','Происхождение',Object.entries(origins)],['directions','Назначение',(data.directions||[]).map(d=>[d.id,d.title])],['billings','Расходы',Object.entries(bills)]];
- return `<details class="metadata-editor"><summary>Редактировать свойства</summary><form id="metadata-form" class="note-form"><p class="tiny">Выберите одно или несколько значений. Ваши правки сохраняются при сверке с Codex.</p><div class="metadata-fields">${fields.map(([key,label,options])=>`<div class="multi-field"><span id="meta-label-${key}">${label}</span><details class="multi" data-meta="${key}"><summary aria-labelledby="meta-label-${key} meta-value-${key}"><span id="meta-value-${key}">${esc(options.filter(([v])=>meta[key].includes(v)).map(([,name])=>name).join(', ')||'Не выбрано')}</span><span aria-hidden="true">⌄</span></summary><div class="multi-options" role="group" aria-label="${label}">${options.map(([value,name])=>`<label><input type="checkbox" name="${key}" value="${esc(value)}" ${meta[key].includes(value)?'checked':''}><span>${esc(name)}</span></label>`).join('')}</div></details></div>`).join('')}</div><button class="secondary" type="submit">Сохранить свойства</button><p class="error" role="alert"></p></form></details>`;
+function metadataEditor(meta,field){
+ const settings={origins:['Происхождение',Object.entries(origins)],directions:['Назначение',(data.directions||[]).map(d=>[d.id,d.title])],billings:['Расходы',Object.entries(bills)]};
+ const [title,options]=settings[field];
+ return `<form id="metadata-form" class="note-form"><p class="tiny">Выберите одно или несколько значений. Ваши правки сохраняются при сверке с Codex.</p><div class="property-options" role="group" aria-label="${title}">${options.map(([value,label])=>`<label><input type="checkbox" value="${esc(value)}" ${meta[field].includes(value)?'checked':''}><span>${esc(label)}</span></label>`).join('')}</div><div class="editor-actions"><button type="button" class="secondary" data-cancel-editor>Отмена</button><button class="primary" type="submit">Сохранить</button></div><p class="error" role="alert"></p></form>`;
 }
 function bindMetadata(id){
- const form=$('#metadata-form');if(!form)return;
- form.onchange=()=>form.querySelectorAll('[data-meta]').forEach(field=>{field.querySelector('summary>span').textContent=[...field.querySelectorAll('input:checked')].map(input=>input.nextElementSibling.textContent).join(', ')||'Не выбрано';});
- form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;try{const payload=Object.fromEntries(['origins','directions','billings'].map(key=>[key,[...form.querySelectorAll(`input[name="${key}"]:checked`)].map(input=>input.value)]));await save(id,'metadata',payload);}catch(error){form.querySelector('.error').textContent=error.message;}finally{button.disabled=false;}};
+ document.querySelectorAll('[data-property]').forEach(button=>button.onclick=()=>{
+  const addon=data.addons.find(a=>a.id===id),meta=metadataFor(addon,data.overlay.items[id]||{}),field=button.dataset.property,revision=data.overlay.revision;
+  if(field==='tags'){openTagEditor(id,meta.tags);return;}
+  const title={origins:'Происхождение',directions:'Назначение',billings:'Расходы'}[field];
+  readPanel(title,metadataEditor(meta,field));const form=$('#metadata-form');
+  form.querySelector('[data-cancel-editor]').onclick=()=>closeDialog($('#reader'));
+  form.onsubmit=async event=>{event.preventDefault();const submit=form.querySelector('[type=submit]');submit.disabled=true;
+   try{const payload=Object.fromEntries(['origins','directions','billings'].map(key=>[key,key===field?[...form.querySelectorAll('input:checked')].map(input=>input.value):meta[key]]));await save(id,'metadata',payload,revision);await closeDialog($('#reader'));document.querySelector(`[data-property="${field}"]`)?.focus();}
+   catch(error){form.querySelector('.error').textContent=error.message;}finally{submit.disabled=false;}
+  };
+ });
 }
+function openTagEditor(id,tags){
+ let draft=[...tags];const revision=data.overlay.revision;
+ readPanel('Теги',`<form class="note-form" id="tags-form"><p class="tiny">Добавляйте свои теги и удаляйте ненужные. Изменения применяются после сохранения.</p><div class="tag-editor-list"></div><label for="tags-input">Новый тег</label><div class="tag-input-row"><input id="tags-input" maxlength="120" placeholder="Например, исследование"><button type="button" class="secondary" id="add-tag">Добавить</button></div><div class="editor-actions"><button type="button" class="secondary" data-cancel-editor>Отмена</button><button class="primary" type="submit">Сохранить</button></div><p class="error" role="alert"></p></form>`);
+ const form=$('#tags-form'),input=$('#tags-input'),error=form.querySelector('.error');
+ const render=()=>{form.querySelector('.tag-editor-list').innerHTML=draft.map((tag,index)=>`<span class="tag editable-tag">${esc(tag)}<button type="button" data-remove-tag="${index}" aria-label="Удалить тег ${esc(tag)}">×</button></span>`).join('')||'<p class="tiny">Тегов пока нет</p>';form.querySelectorAll('[data-remove-tag]').forEach(b=>b.onclick=()=>{draft.splice(Number(b.dataset.removeTag),1);render();input.focus();});};
+ const add=()=>{const value=input.value.trim();if(!value)return true;if(value.includes(',')||draft.length>=100){error.textContent='Введите один тег без запятой. Допустимо до 100 тегов.';return false;}if(!draft.some(tag=>tag.toLocaleLowerCase()===value.toLocaleLowerCase()))draft.push(value);input.value='';error.textContent='';render();return true;};
+ $('#add-tag').onclick=()=>{add();input.focus();};input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();add();}};
+ form.querySelector('[data-cancel-editor]').onclick=()=>closeDialog($('#reader'));
+ form.onsubmit=async event=>{event.preventDefault();if(!add())return;const submit=form.querySelector('[type=submit]');submit.disabled=true;try{await save(id,'tags',{text:draft.join(', ')},revision);await closeDialog($('#reader'));document.querySelector('[data-property=tags]')?.focus();}catch(e){error.textContent=e.message;}finally{submit.disabled=false;}};
+ render();input.focus();
+}
+
 async function changeSkillSources(payload){
  stateEpoch++;switching=true;
  try{data=await api('skill-sources',{...payload,revision:data.overlay.revision});renderPage();toast('Настройки сохранены. Нажмите «Сверить с Codex».');}

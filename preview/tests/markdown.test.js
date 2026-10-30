@@ -16,3 +16,10 @@ test('external links open safely and raw code is inert',()=>{
  const result=markdown('[docs](https://example.com)\n\n```html\n<img onerror="evil()">\n```');
  assert.match(result,/rel="noopener noreferrer"/);assert.match(result,/&lt;img/);assert.doesNotMatch(result,/<img/);
 });
+test('only known package documents become clickable internal navigation',()=>{
+ const result=markdown('[Read](../README.md) [Missing](missing.md) [Escape](../../README.md) [Local](file:///README.md)',{currentDocument:'references/usage.md',documents:{'README.md':{}}});
+ const host=document.createElement('div');host.innerHTML=result;
+ assert.equal(host.querySelectorAll('[data-document-target]').length,1);
+ assert.equal(host.querySelector('[data-document-target]').dataset.documentTarget,'README.md');
+ assert.equal(host.querySelectorAll('a[href]').length,0);
+});
