@@ -90,6 +90,19 @@ test('GitHub repositories and download navigation live in Sources for every skil
  assert.equal(f.doc.querySelectorAll('.repository-entry').length,0);
 });
 
+test('Sources shows discovery failures and cached dates without claiming a live check',t=>{
+ const f=fixture(t),addon=f.ctx.snapshot.addons[0];
+ addon.skills=[{id:'skill',name:'example',repository_discovery:{status:'cached',checked_at:'2026-11-02T10:00:00Z',message:'GitHub недоступен; сохранённые сведения',matches:[{url:'https://github.com/vendor/tool',evidence:'Сохранённый индекс',checked_at:'2026-10-01T10:00:00Z'}]}}];
+ f.open();f.doc.querySelector('[data-tab=sources]').click();
+ assert.ok(f.doc.querySelector('[data-repository-status=cached].amber'));
+ assert.match(f.doc.querySelector('.repository-entry').textContent,/Сохранённый индекс/);
+ assert.ok(f.doc.querySelector('.repository-entry a[href="https://github.com/vendor/tool"]'));
+ addon.skills[0].repository_discovery={status:'not_found',message:'Источник не подтверждён',matches:[]};
+ f.open();f.doc.querySelector('[data-tab=sources]').click();
+ assert.match(f.doc.querySelector('[data-repository-status=not_found]').textContent,/не подтверждён/);
+ assert.equal(f.doc.querySelectorAll('.repository-entry').length,0);assert.equal(f.requests.length,0);
+});
+
 test('property dialogs save only the selected field and tags are edited as chips',async t=>{
  const f=fixture(t);f.open();
  f.doc.querySelector('[data-property=origins]').click();

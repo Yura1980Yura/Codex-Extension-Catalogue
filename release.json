@@ -1,6 +1,6 @@
 {
   "name": "Codex Extension Catalogue",
-  "version": "3.10.1",
+  "version": "3.11.0",
   "status": "current",
   "date": "2026-11-02",
   "entry": "launch.py",

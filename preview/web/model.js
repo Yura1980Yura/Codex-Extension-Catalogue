@@ -23,13 +23,15 @@ export function githubSource(value){
 export function repositoryLinksFor(skill){
  const source=skill.source||{},author=skill.author_profile||{},groups=new Map(),profiles=[];
  const declared=typeof source.repository==='string'&&/^[\w.-]+\/[\w.-]+$/.test(source.repository)?'https://github.com/'+source.repository:source.repository;
- const references=[{url:source.url},{url:declared},...(author.links||[])];
+ const discovered=values(skill.repository_discovery?.matches).flatMap(match=>[{url:match.url,discovery:match},{url:match.folder_url||match.file_url}]);
+ const references=[{url:source.url},{url:declared},...(author.links||[]),...discovered];
  for(const reference of references){
   if(!reference||typeof reference!=='object')continue;
   const parsed=githubSource(reference.url);if(!parsed)continue;
   if(parsed.kind==='profile'){if(!profiles.some(p=>p.url===parsed.url))profiles.push({url:parsed.url,label:reference.label||'GitHub автора'});continue;}
   const key=parsed.repository.toLowerCase();let group=groups.get(key);
   if(!group){group={repository:parsed.repository,url:parsed.root,locations:[]};groups.set(key,group);}
+  if(reference.discovery){group.evidence??=[];group.evidence.push(reference.discovery);}
   if(parsed.kind==='repository'||group.locations.some(l=>l.url===parsed.url))continue;
   const label=parsed.kind==='releases'?'Выпуски и загрузки':group.locations.some(l=>l.kind!=='releases')?reference.label==='Навык в репозитории'&&skill.repository_evidence?'Проверенная версия':'Дополнительный источник':parsed.kind==='file'?'Открыть файл навыка':'Открыть папку навыка';
   group.locations.push({url:parsed.url,label,kind:parsed.kind});

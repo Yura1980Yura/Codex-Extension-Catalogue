@@ -168,6 +168,8 @@ def collect(settings, work):
                     component['installed'] = bool(component.get('installed') and confirmed)
                     if component.get('file_found') and not confirmed and not component.get('managed_package'):
                         component['basis'] = 'Файл найден. Codex не подтвердил доступность при последней сверке.'
+        from repository_discovery import discover
+        repository_discovery = discover(addons, instructions, read(data/'settings.json', {}), work)
         stamp = datetime.now(timezone.utc).isoformat()
         from audit import audit
         reconciliation = audit(inventory, views, addons, session, projects, home)
@@ -176,6 +178,7 @@ def collect(settings, work):
         result = {'product':release.get('name'),'developer':release.get('developer'),'version': read(ROOT/'release.json', {}).get('version', 'unknown'), 'updated_at': stamp, 'source_updated_at': read(data/'inventory.json', {}).get('updated_at'),
             'addons': addons, 'projects': projects, 'directions': directions, 'skill_sources':sources,
             'documentation_audit':documentation_audit,
+            'repository_discovery': repository_discovery,
             'repository_sources':[{k:v.get(k) for k in ('repository','status','checked_at','warning')} for v in repositories.values()],
             'events': journal.read_events(data), 'documents': documents,
             'project_notes': user.get('project_catalog', {}).get('projects', {}),

@@ -45,3 +45,10 @@ test('a second metadata link never claims a verified version without evidence',(
  const result=repositoryLinksFor({source:{url:'https://github.com/owner/library/tree/main/skills/example'},author_profile:{links:[{url:'https://github.com/owner/library/tree/old/skills/example',label:'Навык в репозитории'}]}});
  assert.equal(result.repositories[0].locations[1].label,'Дополнительный источник');
 });
+
+test('discovered sources merge with metadata and retain verification evidence',()=>{
+ const match={repository:'vendor/tool',url:'https://github.com/vendor/tool',folder_url:'https://github.com/vendor/tool/tree/revision/skills/example',status:'cached',evidence:'Сохранённый индекс',checked_at:'2026-11-01'};
+ const result=repositoryLinksFor({source:{repository:'vendor/tool'},repository_discovery:{matches:[match]}});
+ assert.equal(result.repositories.length,1);assert.equal(result.repositories[0].locations.length,1);
+ assert.equal(result.repositories[0].evidence[0].status,'cached');assert.equal(result.repositories[0].evidence[0].checked_at,'2026-11-01');
+});
