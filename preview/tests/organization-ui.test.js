@@ -66,6 +66,30 @@ test('scope keeps globals readonly and never guesses missing local project assoc
  assert.match(f.doc.querySelector('#reader-content').textContent,/не подтверждена/);
 });
 
+test('GitHub repositories and download navigation live in Sources for every skill origin',t=>{
+ const f=fixture(t),addon=f.ctx.snapshot.addons[0];
+ addon.profile={website:'https://github.com/owner/library',documentation:'https://github.com/owner/library/blob/main/README.md'};
+ addon.skills=[{id:'skill',name:'example',source:{repository:'owner/library',url:'https://github.com/owner/library/tree/main/skills/example'},
+  repository_evidence:'Проверено в GitHub',author_profile:{name:'Owner',links:[{label:'Источник навыка',url:'https://github.com/owner/library/tree/main/skills/example'},{label:'GitHub автора',url:'https://github.com/owner'},{label:'Документация',url:'https://example.com/docs'}]}}];
+ for(const origin of ['personal','builtin','third_party']){
+  addon.origin=origin;f.open();f.doc.querySelector('[data-tab=documentation]').click();
+  assert.equal(f.doc.querySelectorAll('#drawer-panel a[href^="https://github.com/"]').length,0);
+  assert.ok(f.doc.querySelector('#drawer-panel a[href="https://example.com/docs"]'));
+  f.doc.querySelector('[data-tab=sources]').click();
+  assert.equal(f.doc.querySelector('#drawer-panel h2').textContent,'Репозитории и загрузка');
+  const root=f.doc.querySelector('.repository-source a[href="https://github.com/owner/library"]');
+  assert.match(root.textContent,/Открыть репозиторий/);assert.equal(root.target,'_blank');assert.equal(root.rel,'noopener noreferrer');
+  const folder=f.doc.querySelector('.repository-source a[href="https://github.com/owner/library/tree/main/skills/example"]');
+  assert.match(folder.textContent,/Открыть папку навыка/);assert.equal(f.doc.querySelectorAll('.repository-source a[href="https://github.com/owner/library/tree/main/skills/example"]').length,1);
+  assert.match(f.doc.querySelector('.repository-source a[href="https://github.com/owner/library/blob/main/README.md"]').textContent,/Документация в репозитории/);
+ }
+ assert.equal(f.requests.length,0);
+ addon.profile={};addon.skills[0].source=null;addon.skills[0].author_profile.links=[{label:'GitHub автора',url:'https://github.com/owner'}];
+ f.open();f.doc.querySelector('[data-tab=sources]').click();
+ assert.match(f.doc.querySelector('.repository-source').textContent,/Репозиторий навыка не указан/);
+ assert.equal(f.doc.querySelectorAll('.repository-entry').length,0);
+});
+
 test('property dialogs save only the selected field and tags are edited as chips',async t=>{
  const f=fixture(t);f.open();
  f.doc.querySelector('[data-property=origins]').click();

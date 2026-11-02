@@ -5,6 +5,37 @@ const normal=p=>String(p||'').replaceAll('\\','/').replace(/\/$/,'').toLowerCase
 const inside=(p,r)=>normal(p)===normal(r)||normal(p).startsWith(normal(r)+'/');
 export const values=v=>Array.isArray(v)?v:v?[v]:[];
 const matches=(filter,value)=>!values(filter).length||values(filter).some(v=>values(value).includes(v));
+export function githubSource(value){
+ if(typeof value!=='string')return null;
+ try{
+  const url=new URL(value);
+  if(url.protocol!=='https:'||url.hostname!=='github.com'||url.port||url.username||url.password)return null;
+  const parts=url.pathname.split('/').filter(Boolean);
+  if(!parts.length||parts.some(p=>!p||p==='.'||p==='..')||!parts.slice(0,2).every(p=>/^[\w.-]+$/.test(p)))return null;
+  if(['orgs','topics','collections','marketplace','settings','login','apps','features','search','sponsors'].includes(parts[0].toLowerCase()))return null;
+  url.search='';url.hash='';
+  if(parts.length===1)return {kind:'profile',url:'https://github.com/'+parts[0]};
+  const repository=parts.slice(0,2).join('/').replace(/\.git$/,'');
+  if(repository.endsWith('/'))return null;
+  return {repository,root:'https://github.com/'+repository,url:url.href.replace(/\/$/,''),kind:parts[2]==='tree'&&parts.length>3?'folder':parts[2]==='blob'&&parts.length>3?'file':parts[2]==='releases'?'releases':'repository'};
+ }catch{return null;}
+}
+export function repositoryLinksFor(skill){
+ const source=skill.source||{},author=skill.author_profile||{},groups=new Map(),profiles=[];
+ const declared=typeof source.repository==='string'&&/^[\w.-]+\/[\w.-]+$/.test(source.repository)?'https://github.com/'+source.repository:source.repository;
+ const references=[{url:source.url},{url:declared},...(author.links||[])];
+ for(const reference of references){
+  if(!reference||typeof reference!=='object')continue;
+  const parsed=githubSource(reference.url);if(!parsed)continue;
+  if(parsed.kind==='profile'){if(!profiles.some(p=>p.url===parsed.url))profiles.push({url:parsed.url,label:reference.label||'GitHub автора'});continue;}
+  const key=parsed.repository.toLowerCase();let group=groups.get(key);
+  if(!group){group={repository:parsed.repository,url:parsed.root,locations:[]};groups.set(key,group);}
+  if(parsed.kind==='repository'||group.locations.some(l=>l.url===parsed.url))continue;
+  const label=parsed.kind==='releases'?'Выпуски и загрузки':group.locations.some(l=>l.kind!=='releases')?reference.label==='Навык в репозитории'&&skill.repository_evidence?'Проверенная версия':'Дополнительный источник':parsed.kind==='file'?'Открыть файл навыка':'Открыть папку навыка';
+  group.locations.push({url:parsed.url,label,kind:parsed.kind});
+ }
+ return {repositories:[...groups.values()],profiles};
+}
 export function metadataFor(addon,overlay={}){
  return {origins:overlay.origins??values(addon.origin),directions:overlay.directions??addon.directions??[],
   billings:overlay.billings??values(addon.billing),tags:overlay.tags_override??[...new Set([...(addon.tags||[]),...(overlay.tags||[])])]};
