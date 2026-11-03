@@ -287,6 +287,16 @@ footer{padding:10px 17px 24px;flex-direction:column;gap:4px}
 
 #sidebar a:focus-visible,#sidebar button:focus-visible{outline-color:#cae0d2}
 
+.projects-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:22px;margin-bottom:4px}
+.project-availability{position:relative;display:flex;align-items:center;gap:6px;min-height:32px;white-space:nowrap;font-size:11px;letter-spacing:0;color:#d0e3d8;cursor:pointer}
+.project-availability input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.project-availability-track{display:block;flex:none;width:28px;height:18px;border:1px solid #8bad9a;border-radius:20px;background:#315b4e;pointer-events:none}
+.project-availability-track::before{content:'';display:block;width:12px;height:12px;margin:2px;border-radius:50%;background:#e1eee6}
+.project-availability input:checked+.project-availability-track{background:#cce6d4;border-color:#cce6d4}
+.project-availability input:checked+.project-availability-track::before{background:#173e31;transform:translateX(10px)}
+.project-availability:hover{color:#fff}
+.project-availability input:focus-visible+.project-availability-track{outline:3px solid #cae0d2;outline-offset:3px}
+
 .brandmark{box-shadow:0 3px 10px #0e2a231e}
 
 .type-chip[data-type=skill] svg{color:var(--type-skill)}

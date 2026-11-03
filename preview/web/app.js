@@ -32,6 +32,7 @@ const plural=(n,one,few,many)=>`${n} ${n%10===1&&n%100!==11?one:n%10>=2&&n%10<=4
 const date=(s,time=false)=>{if(!s)return 'Дата не указана';const d=new Date(s);return Number.isNaN(+d)?s:d.toLocaleString('ru-RU',time?{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}:{day:'numeric',month:'long',year:'numeric'});};
 const bills={free:'Бесплатно',included:'Включено в подписку',paid:'Платные операции',mixed:'Есть платные возможности',unknown:'Расходы не уточнены'};
 let data, selected=null, detailTab='overview', page='all', poll, toastTimer, sortMode=localStorage.getItem('catalog-sort')||'custom';
+let hideUnavailableProjects=localStorage.getItem('catalog-hide-unavailable-projects')==='true';
 let filters={project:'',types:[],scope:'',enabled:'',presence:'installed',direction:'',origin:'',tag:'',billing:'',query:'',favorite:localStorage.getItem('catalog-favorites-only')==='true'};
 let pendingRender=false,lastInput='pointer',dragged=null,orderSaving=false;
 let switching=false,stateEpoch=0;
@@ -52,8 +53,17 @@ function project(){return data.projects.find(p=>p.id===filters.project)||null;}
 function routeFor(id){return id?'#project='+encodeURIComponent(id):'#all';}
 function sidebar(){
  const count=data.addons.filter(a=>presence(componentsFor(a))==='installed').length;
+ const projects=data.projects.filter(p=>!hideUnavailableProjects||p.available!==false);
+ const unavailable=data.projects.filter(p=>p.available===false).length;
+ const availabilityHint=hideUnavailableProjects?`Скрыто проектов с недоступной папкой: ${unavailable}. Выключите, чтобы показать все проекты.`:'Скрывать проекты, у которых папка недоступна. Список Codex не изменяется.';
  const nav=(href,label,ico,active,count='')=>`<a href="${href}" class="nav-link ${active?'active':''}" ${active?'aria-current="page"':''}>${icon(ico)}<span>${esc(label)}</span>${count!==''?`<span class="count">${count}</span>`:''}</a>`;
- $('#navigation').innerHTML=nav('#all','Весь Codex','all',page==='all',count)+nav('#page=favorites','Избранное','star',page==='favorites')+'<p class="nav-heading">Проекты</p>'+data.projects.map(p=>`<a class="nav-link ${filters.project===p.id?'active':''}" href="${routeFor(p.id)}" ${filters.project===p.id?'aria-current="page"':''} title="${esc(p.file_path||p.path)}"><span class="project-dot" aria-hidden="true"></span><span class="project-label">${esc(p.name)}${p.available===false?'<small class="project-missing">Папка недоступна</small>':''}</span></a>`).join('')+nav('#page=found','Найденные навыки','skill',page==='found')+'<p class="nav-heading">Мои записи</p>'+nav('#page=notes','Заметки','notes',page==='notes')+nav('#page=history','История','history',page==='history')+nav('#page=wishes','Пожелания','folder',page==='wishes')+'<p class="nav-heading">О каталоге</p>'+nav('#page=settings','Настройки','settings',page==='settings')+nav('#page=guide','Что здесь показано','info',page==='guide');
+ $('#navigation').innerHTML=nav('#all','Весь Codex','all',page==='all',count)+nav('#page=favorites','Избранное','star',page==='favorites')+`<div class="nav-heading projects-heading"><span>Проекты</span><label class="project-availability" title="${esc(availabilityHint)}"><span>Доступные</span><input id="project-availability" type="checkbox" role="switch" aria-label="Только доступные проекты" ${hideUnavailableProjects?'checked':''}><span class="project-availability-track" aria-hidden="true"></span></label></div>`+projects.map(p=>`<a class="nav-link ${filters.project===p.id?'active':''}" href="${routeFor(p.id)}" ${filters.project===p.id?'aria-current="page"':''} title="${esc(p.file_path||p.path)}"><span class="project-dot" aria-hidden="true"></span><span class="project-label">${esc(p.name)}${p.available===false?'<small class="project-missing">Папка недоступна</small>':''}</span></a>`).join('')+nav('#page=found','Найденные навыки','skill',page==='found')+'<p class="nav-heading">Мои записи</p>'+nav('#page=notes','Заметки','notes',page==='notes')+nav('#page=history','История','history',page==='history')+nav('#page=wishes','Пожелания','folder',page==='wishes')+'<p class="nav-heading">О каталоге</p>'+nav('#page=settings','Настройки','settings',page==='settings')+nav('#page=guide','Что здесь показано','info',page==='guide');
+ $('#project-availability').onchange=e=>{
+  hideUnavailableProjects=e.currentTarget.checked;
+  try{localStorage.setItem('catalog-hide-unavailable-projects',String(hideUnavailableProjects));}catch{/* Keep the choice for this tab if storage is unavailable. */}
+  const scroll=$('#sidebar').scrollTop;sidebar();$('#sidebar').scrollTop=scroll;
+  $('#project-availability').focus({preventScroll:true});
+ };
  $('#legacy-link').href=data.legacy_url;
  $('#legacy-link').onclick=async e=>{e.preventDefault();const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;try{const result=await api('legacy',{});if(tab)tab.location.href=result.url;else location.href=result.url;}catch(error){tab?.close();toast(error.message);}};
  $('#crumb').textContent=project()?.name||({all:'Весь Codex',favorites:'Избранное',notes:'Заметки',history:'История',wishes:'Пожелания',guide:'Что здесь показано',settings:'Настройки',found:'Найденные навыки'}[page]);

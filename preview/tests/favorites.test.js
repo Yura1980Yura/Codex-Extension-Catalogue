@@ -15,13 +15,14 @@ const part=(id,kind='skill',project)=>({id,kind,name:id,installed:true,enabled:t
  scope:project?'local':'global',...(project?{project_ids:[project]}:{})});
 const addon=(id,components,favorite=false)=>({id,title:id,description:id,components,favorite,
  directions:['design'],tags:[],origin:'personal',billing:'free',notes:[],skills:[],related:[],bindings:[]});
-function fixture(t,{hash='#all',stored='false'}={}){
+function fixture(t,{hash='#all',stored='false',availableOnly='false',projects}={}){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8772/'+hash});
  t.after(()=>dom.window.close());
  dom.window.scrollTo=()=>{};
  dom.window.localStorage.setItem('catalog-favorites-only',stored);
+ dom.window.localStorage.setItem('catalog-hide-unavailable-projects',availableOnly);
  const requests=[],snapshot={version:'test',updated_at:'2026-10-28T12:00:00Z',legacy_url:'http://127.0.0.1:8768',
-  projects:[{id:'zoo',name:'Zoo',path:'C:/Zoo'},{id:'other',name:'Other',path:'C:/Other'}],
+  projects:projects||[{id:'zoo',name:'Zoo',path:'C:/Zoo'},{id:'other',name:'Other',path:'C:/Other'}],
   directions:[{id:'design',title:'Дизайн'}],overlay:{revision:1,items:{excluded:{favorite:false}}},
   addons:[addon('global',[part('g')],true),addon('local-zoo',[part('z','skill','zoo')],true),
    addon('local-other',[part('o','skill','other')],true),addon('bundle',[part('bs'),part('bm','mcp')],true),
@@ -45,6 +46,32 @@ function fixture(t,{hash='#all',stored='false'}={}){
  const route=async hash=>{const changed=new Promise(resolve=>dom.window.addEventListener('hashchange',resolve,{once:true}));dom.window.location.hash=hash;await changed;};
  return {dom,context,doc,click,ids,route,requests};
 }
+
+test('sidebar availability switch hides only missing folders without changing projects or the open view',t=>{
+ const projects=[{id:'zoo',name:'Zoo',available:true},{id:'other',name:'Missing',available:false},{id:'unknown',name:'Unknown'}];
+ const f=fixture(t,{hash:'#project=other',projects}),before=JSON.stringify(projects),main=f.doc.querySelector('#main').firstElementChild;
+ const links=()=>Array.from(f.doc.querySelectorAll('#navigation a[href^="#project="]'),el=>el.textContent);
+ assert.equal(links().length,3);assert.equal(f.doc.querySelector('#project-availability').checked,false);
+ f.click('#project-availability');
+ assert.deepEqual(links(),['Zoo','Unknown']);assert.equal(JSON.stringify(projects),before);
+ assert.equal(f.dom.window.location.hash,'#project=other');assert.equal(f.doc.querySelector('#main').firstElementChild,main);
+ assert.equal(f.doc.activeElement.id,'project-availability');assert.equal(f.doc.activeElement.getAttribute('role'),'switch');
+ assert.equal(f.dom.window.localStorage.getItem('catalog-hide-unavailable-projects'),'true');
+ f.click('#project-availability');assert.equal(links().length,3);assert.deepEqual(f.requests,[]);
+});
+
+test('sidebar availability preference survives navigation and reload and follows newly reconciled facts',async t=>{
+ const projects=[{id:'zoo',name:'Zoo',available:true},{id:'other',name:'Missing',available:false}];
+ const f=fixture(t,{projects});f.click('#project-availability');await f.route('#page=guide');
+ assert.equal(f.doc.querySelector('#project-availability').checked,true);
+ const reloaded=fixture(t,{projects,availableOnly:f.dom.window.localStorage.getItem('catalog-hide-unavailable-projects')});
+ const link=id=>reloaded.doc.querySelector(`#navigation a[href="#project=${id}"]`);
+ assert.ok(link('zoo'));assert.equal(link('other'),null);
+ projects[0].available=false;projects[1].available=true;projects.push({id:'added',name:'New',available:true});
+ vm.runInContext('renderPage()',reloaded.context);
+ assert.equal(link('zoo'),null);assert.ok(link('other'));assert.ok(link('added'));
+ assert.equal(reloaded.doc.querySelector('#project-availability').checked,true);assert.deepEqual(reloaded.requests,[]);
+});
 
 test('favorites combines with multiple types, project scope and name; all types preserves favorites',async t=>{
  const f=fixture(t);f.click('#favorite-filter');

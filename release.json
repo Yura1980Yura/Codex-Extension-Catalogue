@@ -1,8 +1,8 @@
 {
   "name": "Codex Extension Catalogue",
-  "version": "3.11.0",
+  "version": "3.11.1",
   "status": "current",
-  "date": "2026-11-02",
+  "date": "2026-11-03",
   "entry": "launch.py",
   "interface": "preview/",
   "legacy_interface": "app/manager/",
