@@ -33,7 +33,6 @@ h3{font-size:16px;font-weight:650}
 .project-availability.warning,.danger{color:#9a382e}
 .sidebar-bottom{margin-top:auto;padding:28px 12px 0;font-size:12px}
 .sidebar-bottom p{color:var(--muted);margin:10px 0}
-.sidebar-bottom a{font-size:12px}
 .preview-pill{padding:4px 9px;background:#dfe9e3;border-radius:5px;color:#365a49;font-size:12px}
 .topbar{height:73px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:var(--paper)}
 .crumb{display:flex;gap:12px;font-size:13px;color:var(--muted)}
@@ -279,7 +278,7 @@ footer{padding:10px 17px 24px;flex-direction:column;gap:4px}
 
 #sidebar .nav-link.active{background:#e1eee6;color:#173e31}
 
-#sidebar .quiet,#sidebar .sidebar-bottom a{color:#d0e3d8}
+#sidebar .quiet{color:#d0e3d8}
 
 #sidebar .preview-pill{background:#2b5446;color:#e0efe6}
 

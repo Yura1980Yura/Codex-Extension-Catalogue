@@ -64,8 +64,6 @@ function sidebar(){
   const scroll=$('#sidebar').scrollTop;sidebar();$('#sidebar').scrollTop=scroll;
   $('#project-availability').focus({preventScroll:true});
  };
- $('#legacy-link').href=data.legacy_url;
- $('#legacy-link').onclick=async e=>{e.preventDefault();const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;try{const result=await api('legacy',{});if(tab)tab.location.href=result.url;else location.href=result.url;}catch(error){tab?.close();toast(error.message);}};
  $('#crumb').textContent=project()?.name||({all:'Весь Codex',favorites:'Избранное',notes:'Заметки',history:'История',wishes:'Пожелания',guide:'Что здесь показано',settings:'Настройки',found:'Найденные навыки'}[page]);
  $('#footer').innerHTML=`<span>Сверка ${esc(date(data.updated_at,true))} · снимок ${esc(data.version)}</span><button class="quiet" id="coverage">Откуда эти сведения ${icon('info')}</button>`;
  $('#coverage').onclick=coverage;
